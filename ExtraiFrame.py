@@ -28,15 +28,15 @@ def extrair_frame(video_path, frame_number, output_image_path):
     video.release()
 
 # Exemplo de uso
-base_path = "C:/Users/RaquelPantojo/Desktop/ElasticidadePele"
-folder_name = "DespolarizadoP4"
-video_name = "v1.mp4"
+base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol"
+folder_name = "DespolarizadoP5"
+video_name = "gamma3.mp4"
 
 # Verifica o caminho do vídeo
 video_path = os.path.join(base_path, folder_name, video_name)
 
 
 frame_number = 10 # Número do frame desejado
-output_image_path = 'frame_extraido.jpg'  # Caminho para salvar o frame
+output_image_path = 'frame_gamma3.jpg'  # Caminho para salvar o frame
 
 extrair_frame(video_path, frame_number, output_image_path)

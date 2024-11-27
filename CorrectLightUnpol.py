@@ -14,12 +14,10 @@ def FilterButterworth(data, cutoff, order=5):
     return filtfilt(b, a, data)
 
 # Caminho base para os arquivos do projeto
-base_path = "C:/Users/RaquelPantojo/Desktop/ElasticidadePele"
-folder_name = "DespolarizadoP3"
-video_name = "v6.mp4"
-#gamma = 0.829
-#gammaROI1 = 0.467
-#gammaROI2 = 0.616
+#base_path = "C:/Users/RaquelPantojo/Desktop/ElasticidadePele" 
+base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5" #PC lab
+folder_name = "teste1"
+video_name = "corrected_v7_gamma=1.mp4"
 
 gammaROI1 = 1
 gammaROI2 = 1
@@ -57,18 +55,22 @@ def select_rois():
         if key == 13:  # Tecla Enter
             roi1 = cv.selectROI("Selecionar ROI1", frame)
             print("Pressione ENTER novamente para selecionar ROI2.")
+            print(roi1)
             roi2 = cv.selectROI("Selecionar ROI2", frame)
+            print(roi2)
             cv.destroyAllWindows()
             break
 
 # Selecionar as ROIs
-select_rois()
+#select_rois()
+roi1=(551, 109, 87, 71)
+roi2=(868, 363, 61, 50)
 
 # Reinicia o vídeo
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
 # Listas para armazenar intensidades e timestamps
-green_roi1, green_roi2,green_roir,green_roib,time_stamps = [], [], [],[],[]
+green_roi2, green_roir, green_roig ,green_roib, time_stamps = [], [], [],[],[]
 
 # Processa o vídeo frame a frame
 while True:
@@ -81,7 +83,7 @@ while True:
     roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
     
     green_roir.append(np.mean(roi1_frame[:, :, 0]))
-    green_roi1.append(np.mean(roi1_frame[:, :, 1]))
+    green_roig.append(np.mean(roi1_frame[:, :, 1]))
     green_roib.append(np.mean(roi1_frame[:, :, 2]))
     
     green_roi2.append(np.mean(roi2_frame[:, :, 1]))
@@ -91,33 +93,41 @@ while True:
 cap.release()
 
 # Normalização e processamento das intensidades
-green_roi1 = np.array(green_roi1) ** (1/gammaROI1)
-green_roi2 = np.array(green_roi2) ** (1/gammaROI2)
+green_roig = np.array(green_roig) ** (gammaROI1)
+#mean_roig = np.mean(green_roig[:30])
+#green_roig /= mean_roig
+
+green_roi2 = np.array(green_roi2) ** (gammaROI2)
 
 time_stamps = np.array(time_stamps)
 
+#mean_roi2= np.mean(green_roi2[:30])
+#green_roi2/=mean_roi2
+
 # Aplica filtro Butterworth na ROI2
 filtered_roi2 = FilterButterworth(green_roi2, cutoff=0.15)
-#mean_roi2 = np.mean(filtered_roi2[:30])
-#filtered_roi2 /= mean_roi2
-#Meangreen_roi2 = green_roi2/mean_roi2
+noise=green_roi2-filtered_roi2
 
 
-# Calcula razão entre as intensidades normalizadas
-ratios = green_roi1 / filtered_roi2
+ratios= (green_roig/filtered_roi2)
+meanRatios = np.mean(ratios[:30])
+ratios=(ratios/meanRatios)*255
+
+
+
 
 # Plotagem dos resultados
 plt.figure(figsize=(10, 5))
 
 # Intensidade ROI1
-plt.subplot(3, 1, 1)
-plt.plot(time_stamps, green_roi1, label='G - ROI1 ', color='g', linewidth=2)
+plt.subplot(4, 1, 1)
+plt.plot(time_stamps, green_roig, label='G - ROI1 ', color='g', linewidth=2)
 plt.xlabel('Tempo (s)')
 plt.ylabel('Intensidade Normalizada')
 plt.legend()
 
 # Intensidade ROI2
-plt.subplot(3, 1, 2)
+plt.subplot(4, 1, 2)
 plt.plot(time_stamps, green_roi2, label='G - ROI2', color='g',linewidth=2)
 plt.plot(time_stamps, filtered_roi2, label='Butterworth Filter order=5', color='r',linewidth=1)
 plt.xlabel('Tempo (s)')
@@ -125,11 +135,12 @@ plt.ylabel('Intensidade Normalizada')
 plt.legend()
 
 # Razão entre intensidades
-plt.subplot(3, 1, 3)
+plt.subplot(4, 1, 3)
 plt.plot(time_stamps, ratios, label='Razão ROI1/FilterROI2', color='b',linewidth=2)
 plt.xlabel('Tempo (s)')
 plt.ylabel('Razão')
 plt.legend()
+
 
 plt.tight_layout()
 plt.show()

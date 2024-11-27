@@ -15,7 +15,7 @@ def correct_flat_field_bgr_video(video_path, video_path_white, output_path, gamm
     if not cap.isOpened() or not cap_white.isOpened():
         raise FileNotFoundError("Um ou ambos os vídeos não foram encontrados ou não puderam ser abertos.")
 
-   
+    cap_white.set(cv.CAP_PROP_POS_FRAMES, 10)
     ret_white, frame_white = cap_white.read()
     if not ret_white:
         raise ValueError("Não foi possível ler o quadro do vídeo de referência (imgWhite).")
@@ -23,7 +23,7 @@ def correct_flat_field_bgr_video(video_path, video_path_white, output_path, gamm
 
     # Normaliza o quadro de referência
     white_f32 = frame_white.astype(np.float32) / 255
-    white_gamma = white_f32 ** (1 / gamma)
+    white_gamma = white_f32 ** (gamma)
     white_ycrcb = cv.cvtColor(white_gamma, cv.COLOR_BGR2YCrCb)
     white_y = white_ycrcb[..., 0]
 
@@ -40,7 +40,7 @@ def correct_flat_field_bgr_video(video_path, video_path_white, output_path, gamm
             break  
 
         frame_f32 = frame.astype(np.float32) / 255
-        frame_gamma = frame_f32 ** (1 / gamma)
+        frame_gamma = frame_f32 ** (gamma)
         frame_ycrcb = cv.cvtColor(frame_gamma, cv.COLOR_BGR2YCrCb)
         frame_y = frame_ycrcb[..., 0]
 
@@ -72,15 +72,15 @@ def correct_flat_field_bgr_video(video_path, video_path_white, output_path, gamm
 # Caminho base para os arquivos do projeto
 base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol"
 folder_name = "DespolarizadoP5"
-video_name = "v7.mp4"
+video_name = "v9.mp4"
 video_name_white = "imgWhite2.mp4"
-output_video_name = "corrected_v7_gamma=1.53.mp4"
+output_video_name = "corrected_v10_gamma=1.mp4"
 
 video_path = os.path.join(base_path, folder_name, video_name)
 video_path_white = os.path.join(base_path, folder_name, video_name_white)
 output_video_path = os.path.join(base_path, folder_name, output_video_name)
 
-gamma = 0.65
+gamma =1
 
 if not os.path.exists(video_path) or not os.path.exists(video_path_white):
     print(f"Um ou ambos os vídeos não foram encontrados!")
