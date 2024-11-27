@@ -1,0 +1,38 @@
+Nesse estudo, usei a ideia do Eduardo de usar o flat filter 
+primiero corrige o video 
+usando um papel branco como referencia 
+todo e depois calcula o CRT 
+
+
+
+# Espera imagens 8 bits de 3 canais
+ def correct_flat_field_bgr ( img , flat_field , gama = 1 ):
+    # {{{
+    img_f32bits = img . astype ( np . float32 ) / 255
+    campo_plano_f32bits = campo_plano . astype ( np . float32 ) / 255
+
+    img_gamma = img_f32bits ** gama
+    flat_field_gamma = campo_plano_f32bits ** gama
+
+    img_ycrcb = cv.cvtColor ( img_gama , cv.COLOR_BGR2YCrCb )​​​​
+    campo_plano_ycrcb = cv . cvtColor ( gama_campo_plano , cv . COLOR_BGR2YCrCb )
+
+    img_y = img_ycrcb [..., 0 ]
+    campo_plano_y = campo_plano_ycrcb [..., 0 ]
+
+    correção = np . dividir (
+        img_y ,
+        campo_plano_y ,
+        fora = np . zeros_like ( img_y ),
+        onde = campo_plano_y != 0 ,
+ )
+    correção_média = np . média ( correção )
+    img_avg = np . média ( img_y )
+    C = média_img / média_correção  # fator para restaurar o L original
+
+    img_y_corrected = C * correção
+    img_ycrcb [..., 0 ] = img_y_corrigido
+    img_bgr2 = np . clip ( cv . cvtColor ( img_ycrcb , cv . COLOR_YCrCb2BGR ), 0 , 1 )
+    img_bgr2 = float2int ( img_bgr2 ** ( 1 / gama ))
+
+    retornar img_bgr2
