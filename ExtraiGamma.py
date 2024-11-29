@@ -45,7 +45,7 @@ def inv_gamma_fit(x,a,b,c):
 
 
 # Carregue a imagem
-name_smp ='frame_extraido.jpg'
+name_smp ='frame_extraidoDep5v1.jpg'
 img_smp = cv2.imread(name_smp)
 color_smp = (gc.getColorChart(img_smp))/255.0
 
