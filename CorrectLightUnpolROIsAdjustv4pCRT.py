@@ -148,7 +148,7 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, all_green_ro
     i, j = best_combination
     ratio_key = f"ROI{i+1}/ROI{j+1}"
     original_ratio = ratios[ratio_key]
-    adjusted_ratio = (best_a + best_b * original_ratio) / (best_a + best_b* original_ratio)
+    adjusted_ratio = (best_a + best_b * original_ratio) 
 
     fig, axs = plt.subplots(3, 3, figsize=(18, 12))
     
@@ -274,7 +274,7 @@ RoiBlue= np.array(RoiBlue)
 
 
 green_roi1 = np.array(RoiGreen) ** gamma
-
+green_roi1 = (best_a + best_b * green_roi1)
 
 time_stamps = np.array(time_stamps)
 
