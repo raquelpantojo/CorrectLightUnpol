@@ -9,6 +9,8 @@ from itertools import combinations
 roi_width = 60
 roi_height = 60
 num_rois = 200  # Número de ROIs a serem criadas
+gamma=1.53
+
 
 # Função para criar ROIs fixas dinamicamente
 def create_dynamic_rois(frame, num_rois, roi_width, roi_height):
@@ -31,9 +33,10 @@ def calculate_ratios(all_green_rois, num_rois):
     return ratios
 
 # Caminho base para os arquivos do projeto
-base_path = "C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC casa
+#base_path = "C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC casa
+base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
 folder_name = "teste1"
-video_name = "v7.mp4"
+video_name = "corrected_v7_gamma=1.53.mp4"
 
 # Verifica o caminho do vídeo
 video_path = os.path.join(base_path, folder_name, video_name)
@@ -66,6 +69,7 @@ while True:
     for i, roi in enumerate(rois):
         x, y, w, h = roi
         roi_frame = frame_resized[y:y+h, x:x+w]
+        roi_frame = roi_frame ** (gamma)
         if roi_frame.size > 0:  # Certifica-se de que a ROI não está vazia
             all_green_rois[i].append(np.mean(roi_frame[:, :, 1]))
     
