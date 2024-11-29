@@ -5,7 +5,8 @@ import sys
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
 
-sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT")
+#sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
+sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa
 from src.pyCRT import PCRT  
 
 # Função para aplicar um filtro Butterworth no sinal
@@ -14,15 +15,16 @@ def FilterButterworth(data, cutoff, order=5):
     return filtfilt(b, a, data)
 
 # Caminho base para os arquivos do projeto
-base_path = "C:/Users/RaquelPantojo/Desktop/ElasticidadePele"
+#base_path = "C:/Users/RaquelPantojo/Desktop/ElasticidadePele"
+base_path = "C:/Users/Fotobio/Desktop/Estudo_ElasticidadePele"
 folder_name = "DespolarizadoP3"
 video_name = "v6.mp4"
 #gamma = 0.829
-#gammaROI1 = 0.467
-#gammaROI2 = 0.616
+gammaROI1 = 0.467
+gammaROI2 = 0.616
 
-gammaROI1 = 1
-gammaROI2 = 1
+#gammaROI1 = 1
+#gammaROI2 = 1
 
 # Verifica o caminho do vídeo
 video_path = os.path.join(base_path, folder_name, video_name)
@@ -68,7 +70,7 @@ select_rois()
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
 # Listas para armazenar intensidades e timestamps
-green_roi1, green_roi2,green_roir,green_roib,time_stamps = [], [], [],[],[]
+green_roi2,RoiRed,RoiGreen,RoiBlue,time_stamps = [], [], [],[],[]
 
 # Processa o vídeo frame a frame
 while True:
@@ -80,18 +82,25 @@ while True:
     roi1_frame = frame[int(roi1[1]):int(roi1[1] + roi1[3]), int(roi1[0]):int(roi1[0] + roi1[2])]
     roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
     
-    green_roir.append(np.mean(roi1_frame[:, :, 0]))
-    green_roi1.append(np.mean(roi1_frame[:, :, 1]))
-    green_roib.append(np.mean(roi1_frame[:, :, 2]))
+    # ROI 1
+    RoiRed.append(np.mean(roi1_frame[:, :, 0]))
+    RoiGreen.append(np.mean(roi1_frame[:, :, 1]))
+    RoiBlue.append(np.mean(roi1_frame[:, :, 2]))
     
+    # ROI 2
     green_roi2.append(np.mean(roi2_frame[:, :, 1]))
     time_stamps.append(frame_count / fps)
     frame_count += 1
 
 cap.release()
 
-# Normalização e processamento das intensidades
-green_roi1 = np.array(green_roi1) ** (1/gammaROI1)
+# Usei isso so para conseguir calcular o CRT depois 
+RoiRed=np.array(RoiRed)
+RoiGreen=np.array(RoiGreen)
+RoiBlue= np.array(RoiBlue)
+
+
+green_roi1 = np.array(RoiGreen) ** (1/gammaROI1)
 green_roi2 = np.array(green_roi2) ** (1/gammaROI2)
 
 time_stamps = np.array(time_stamps)
@@ -103,8 +112,10 @@ filtered_roi2 = FilterButterworth(green_roi2, cutoff=0.15)
 #Meangreen_roi2 = green_roi2/mean_roi2
 
 
-# Calcula razão entre as intensidades normalizadas
-ratios = green_roi1 / filtered_roi2
+# Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro 
+ratiosr = green_roi1 / filtered_roi2
+ratiosg = green_roi1 / filtered_roi2
+ratiosb = green_roi1 / filtered_roi2
 
 # Plotagem dos resultados
 plt.figure(figsize=(10, 5))
@@ -126,7 +137,7 @@ plt.legend()
 
 # Razão entre intensidades
 plt.subplot(3, 1, 3)
-plt.plot(time_stamps, ratios, label='Razão ROI1/FilterROI2', color='b',linewidth=2)
+plt.plot(time_stamps, ratiosg, label='Razão ROI1/FilterROI2', color='b',linewidth=2)
 plt.xlabel('Tempo (s)')
 plt.ylabel('Razão')
 plt.legend()
@@ -136,18 +147,16 @@ plt.show()
 
 
 
-"""
-pcrt = PCRT(time_stamps, green_roi1)
+channelsAvgIntensArr= np.column_stack((RoiRed, RoiGreen, RoiBlue))
+pcrt = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
 pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
 
 
-pcrt = PCRT(time_stamps, ratios)
+ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
+pcrt = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
 pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
 
-Keyword arguments:
-argument -- description
-Return: return_description
-"""
+
 
