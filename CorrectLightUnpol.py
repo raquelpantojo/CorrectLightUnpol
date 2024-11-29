@@ -15,7 +15,6 @@ def FilterButterworth(data, cutoff, order=5):
     return filtfilt(b, a, data)
 
 # Caminho base para os arquivos do projeto
-<<<<<<< HEAD
 #base_path = "C:/Users/RaquelPantojo/Desktop/ElasticidadePele"
 base_path = "C:/Users/Fotobio/Desktop/Estudo_ElasticidadePele"
 folder_name = "DespolarizadoP3"
@@ -23,12 +22,6 @@ video_name = "v6.mp4"
 #gamma = 0.829
 gammaROI1 = 0.467
 gammaROI2 = 0.616
-=======
-#base_path = "C:/Users/RaquelPantojo/Desktop/ElasticidadePele" 
-base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5" #PC lab
-folder_name = "teste1"
-video_name = "corrected_v7_gamma=1.mp4"
->>>>>>> 55863b0393bb08b2b42bffbf83806c45f8c5d53c
 
 #gammaROI1 = 1
 #gammaROI2 = 1
@@ -81,11 +74,7 @@ roi2=(868, 363, 61, 50)
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
 # Listas para armazenar intensidades e timestamps
-<<<<<<< HEAD
 green_roi2,RoiRed,RoiGreen,RoiBlue,time_stamps = [], [], [],[],[]
-=======
-green_roi2, green_roir, green_roig ,green_roib, time_stamps = [], [], [],[],[]
->>>>>>> 55863b0393bb08b2b42bffbf83806c45f8c5d53c
 
 # Processa o vídeo frame a frame
 while True:
@@ -97,16 +86,10 @@ while True:
     roi1_frame = frame[int(roi1[1]):int(roi1[1] + roi1[3]), int(roi1[0]):int(roi1[0] + roi1[2])]
     roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
     
-<<<<<<< HEAD
     # ROI 1
     RoiRed.append(np.mean(roi1_frame[:, :, 0]))
     RoiGreen.append(np.mean(roi1_frame[:, :, 1]))
     RoiBlue.append(np.mean(roi1_frame[:, :, 2]))
-=======
-    green_roir.append(np.mean(roi1_frame[:, :, 0]))
-    green_roig.append(np.mean(roi1_frame[:, :, 1]))
-    green_roib.append(np.mean(roi1_frame[:, :, 2]))
->>>>>>> 55863b0393bb08b2b42bffbf83806c45f8c5d53c
     
     # ROI 2
     green_roi2.append(np.mean(roi2_frame[:, :, 1]))
@@ -115,7 +98,6 @@ while True:
 
 cap.release()
 
-<<<<<<< HEAD
 # Usei isso so para conseguir calcular o CRT depois 
 RoiRed=np.array(RoiRed)
 RoiGreen=np.array(RoiGreen)
@@ -124,14 +106,6 @@ RoiBlue= np.array(RoiBlue)
 
 green_roi1 = np.array(RoiGreen) ** (1/gammaROI1)
 green_roi2 = np.array(green_roi2) ** (1/gammaROI2)
-=======
-# Normalização e processamento das intensidades
-green_roig = np.array(green_roig) ** (gammaROI1)
-#mean_roig = np.mean(green_roig[:30])
-#green_roig /= mean_roig
-
-green_roi2 = np.array(green_roi2) ** (gammaROI2)
->>>>>>> 55863b0393bb08b2b42bffbf83806c45f8c5d53c
 
 time_stamps = np.array(time_stamps)
 
@@ -149,13 +123,10 @@ ratios=(ratios/meanRatios)*255
 
 
 
-<<<<<<< HEAD
 # Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro 
 ratiosr = green_roi1 / filtered_roi2
 ratiosg = green_roi1 / filtered_roi2
 ratiosb = green_roi1 / filtered_roi2
-=======
->>>>>>> 55863b0393bb08b2b42bffbf83806c45f8c5d53c
 
 # Plotagem dos resultados
 plt.figure(figsize=(10, 5))
@@ -176,13 +147,8 @@ plt.ylabel('Intensidade Normalizada')
 plt.legend()
 
 # Razão entre intensidades
-<<<<<<< HEAD
 plt.subplot(3, 1, 3)
 plt.plot(time_stamps, ratiosg, label='Razão ROI1/FilterROI2', color='b',linewidth=2)
-=======
-plt.subplot(4, 1, 3)
-plt.plot(time_stamps, ratios, label='Razão ROI1/FilterROI2', color='b',linewidth=2)
->>>>>>> 55863b0393bb08b2b42bffbf83806c45f8c5d53c
 plt.xlabel('Tempo (s)')
 plt.ylabel('Razão')
 plt.legend()
