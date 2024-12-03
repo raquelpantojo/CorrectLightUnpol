@@ -1,5 +1,6 @@
 # agora vou usar o ratios para encontrar a e b 
 # tem que forçar a razão ser 1 e ai encontrar o a e b que garantam isso 
+# tentativa de método para otimizar a função a+b*I^gamma
 
 import cv2 as cv
 import numpy as np
@@ -7,7 +8,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 from itertools import combinations
-from scipy.signal import butter, filtfilt
+from scipy.optimize import minimize
 
 
 sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
@@ -21,12 +22,68 @@ from src.pyCRT import PCRT
 base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5" #PC casa
 
 folder_name = "teste1"
-video_name="v7.mp4"
+video_name="corrected_v7_gamma=1.53.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 roi_width = 60 
 roi_height = 60
 num_rois = 200  # Número de ROIs a serem criadas
 gamma = 1.53
+
+# Função de plotagem com a razão ajustada
+def plot_image_and_ratios(frames, best_combination, best_a, best_b, all_green_rois, time_stamps, fps,green_roi2):
+    if best_combination is None:
+        print("Nenhuma combinação de ROIs encontrada.")
+        return
+    
+    i, j = best_combination
+    ratio_key = f"ROI{i+1}/ROI{j+1}"
+    original_ratio = ratios[ratio_key]
+    adjusted_ratio = (best_a + best_b * all_green_rois[i]) 
+
+    fig, axs = plt.subplots(3, 3, figsize=(18, 12))
+    
+    axs[0, 0].imshow(cv.cvtColor(frames[0], cv.COLOR_BGR2RGB))  
+    axs[0, 0].set_title('Imagem Original')
+    axs[0, 0].axis('off')  
+    
+    rois = create_dynamic_rois(frames[0], num_rois, roi_width, roi_height)
+    x_i, y_i, w_i, h_i = rois[i]
+    x_j, y_j, w_j, h_j = rois[j]
+    
+    axs[0, 0].add_patch(plt.Rectangle((x_i, y_i), w_i, h_i, edgecolor='blue', facecolor='none', linewidth=2))
+    axs[0, 0].add_patch(plt.Rectangle((x_j, y_j), w_j, h_j, edgecolor='red', facecolor='none', linewidth=2))
+    axs[0, 0].text(x_i + w_i / 2, y_i + h_i / 2, f"{i+1}", color='blue', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0, 0].text(x_j + w_j / 2, y_j + h_j / 2, f"{j+1}", color='red', ha='center', va='center', fontsize=8, weight='bold')
+    
+    #Remover subplots em branco da primeira coluna
+    axs[1, 0].axis('off')
+    axs[2, 0].axis('off')
+
+    axs[0, 1].plot(time_stamps, all_green_rois[i], label=f"Canal Verde ROI{i+1} - Original", color='blue')
+    axs[0, 1].set_xlabel('Tempo (s)')
+    axs[0, 1].set_ylabel('Intensidade do Canal Verde')
+    axs[0, 1].legend()
+
+    axs[1, 1].plot(time_stamps, all_green_rois[j], label=f"Canal Verde ROI{j+1} - Original", color='red')
+    axs[1, 1].set_xlabel('Tempo (s)')
+    axs[1, 1].set_ylabel('Intensidade do Canal Verde')
+    axs[1, 1].legend()
+
+    axs[2, 1].plot(time_stamps, original_ratio, label=f"Razão Original ROI{i+1} / ROI{j+1}", color='orange')
+    axs[2, 1].set_xlabel('Tempo (s)')
+    axs[2, 1].set_ylabel('Razão Original')
+    axs[2, 1].legend()
+
+    axs[0, 2].plot(time_stamps, green_roi2, label=f"Canal Verde ROI{i+1} a={best_a:.2f} b={best_b:.2f}", color='blue')
+    axs[0, 2].set_title(f"a={best_a} b={best_b}")
+    axs[0, 2].set_xlabel('Tempo (s)')
+    axs[0, 2].set_ylabel('Intensidade do Canal Verde')
+    axs[0, 2].legend()
+
+
+
+    plt.tight_layout()
+    plt.show()
 
 
 # Função para criar ROIs fixas dinamicamente
@@ -48,6 +105,35 @@ def calculate_ratios(all_green_rois, num_rois):
         if len(all_green_rois[i]) == len(all_green_rois[j]) > 0:
             ratios[f"ROI{i+1}/ROI{j+1}"] = all_green_rois[i] / all_green_rois[j]
     return ratios
+
+
+# Função para ajustar os valores de a e b
+import numpy as np
+
+def find_best_a_b(green_roi2):
+    best_a, best_b = None, None
+    best_error = float('inf')  # Inicializa o erro com um valor muito grande
+
+    # Defina os valores possíveis de a e b
+    a_values = np.arange(0.1, 10.01, 0.1)
+    b_values = np.arange(0.1, 10.01, 0.1)
+
+    # Iteração sobre todas as combinações possíveis de a e b
+    for a in a_values:
+        for b in b_values:
+            # Ajusta a razão com o valor atual de a e b
+            adjusted_ratio = a + b * (green_roi2)  
+            # Calcula o erro (diferença média absoluta entre a razão ajustada e 1)
+            error = np.mean(np.abs(adjusted_ratio - 1))
+            
+            # Se o erro for menor que o erro anterior, armazena a nova combinação de a, b 
+            if error < best_error:
+                best_error = error
+                best_a, best_b = a, b
+
+    return best_a, best_b
+
+
 
 
 
@@ -105,106 +191,7 @@ close_to_one_ratios = {
     if abs(np.median(value) - 1) < threshold_median and np.std(value) < threshold_std
 }
 
-# Função para ajustar os valores de a e b
-def find_best_a_b(roi_i, roi_j, ratios):
-    best_a, best_b = 0, 0
-    min_diff = float('inf')
-    
-    ratio_key = f"ROI{roi_i+1}/ROI{roi_j+1}"  # Construir a chave correta
-    if ratio_key not in ratios:
-        return None, None  # Caso a combinação não exista
-    
-    ratio_values = ratios[ratio_key]
-    
-    # Teste de diferentes valores para a e b
-    for a in np.arange(0.1, 100, 0.1):
-        for b in np.arange(0.1, 100, 0.1):
-            # Calculando a razão ajustada
-            adjusted_ratio = (a + b * ratio_values)
-            
-            # Calculando a diferença média em relação à mediana de 1
-            avg_diff = np.mean(np.abs(adjusted_ratio - 1))
-            if avg_diff < min_diff:
-                min_diff = avg_diff
-                best_a, best_b = a, b
 
-    return best_a, best_b
-
-# Encontrar a melhor combinação de ROIs e ajustar a e b
-best_a, best_b = None, None
-best_combination = None
-for roi_pair in close_to_one_ratios.keys():
-    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))  
-    a, b = find_best_a_b(i, j, ratios)
-    if a is not None and b is not None:
-        if best_a is None or best_b is None or (a and b):  
-            best_a, best_b = a, b
-            best_combination = (i, j)
-
-print(f"Melhor a: {best_a}, Melhor b: {best_b}, Combinação de ROIs: {best_combination}")
-
-# Função de plotagem com a razão ajustada
-def plot_image_and_ratios(frames, best_combination, best_a, best_b, all_green_rois, time_stamps, fps):
-    if best_combination is None:
-        print("Nenhuma combinação de ROIs encontrada.")
-        return
-    
-    i, j = best_combination
-    ratio_key = f"ROI{i+1}/ROI{j+1}"
-    original_ratio = ratios[ratio_key]
-    adjusted_ratio = (best_a + best_b * original_ratio) 
-
-    fig, axs = plt.subplots(3, 3, figsize=(18, 12))
-    
-    axs[0, 0].imshow(cv.cvtColor(frames[0], cv.COLOR_BGR2RGB))  
-    axs[0, 0].set_title('Imagem Original')
-    axs[0, 0].axis('off')  
-    
-    rois = create_dynamic_rois(frames[0], num_rois, roi_width, roi_height)
-    x_i, y_i, w_i, h_i = rois[i]
-    x_j, y_j, w_j, h_j = rois[j]
-    
-    axs[0, 0].add_patch(plt.Rectangle((x_i, y_i), w_i, h_i, edgecolor='blue', facecolor='none', linewidth=2))
-    axs[0, 0].add_patch(plt.Rectangle((x_j, y_j), w_j, h_j, edgecolor='red', facecolor='none', linewidth=2))
-    axs[0, 0].text(x_i + w_i / 2, y_i + h_i / 2, f"{i+1}", color='blue', ha='center', va='center', fontsize=8, weight='bold')
-    axs[0, 0].text(x_j + w_j / 2, y_j + h_j / 2, f"{j+1}", color='red', ha='center', va='center', fontsize=8, weight='bold')
-    
-    #Remover subplots em branco da primeira coluna
-    axs[1, 0].axis('off')
-    axs[2, 0].axis('off')
-
-    axs[0, 1].plot(time_stamps, all_green_rois[i], label=f"Canal Verde ROI{i+1} - Original", color='blue')
-    axs[0, 1].set_xlabel('Tempo (s)')
-    axs[0, 1].set_ylabel('Intensidade do Canal Verde')
-    axs[0, 1].legend()
-
-    axs[1, 1].plot(time_stamps, all_green_rois[j], label=f"Canal Verde ROI{j+1} - Original", color='red')
-    axs[1, 1].set_xlabel('Tempo (s)')
-    axs[1, 1].set_ylabel('Intensidade do Canal Verde')
-    axs[1, 1].legend()
-
-    axs[2, 1].plot(time_stamps, original_ratio, label=f"Razão Original ROI{i+1} / ROI{j+1}", color='orange')
-    axs[2, 1].set_xlabel('Tempo (s)')
-    axs[2, 1].set_ylabel('Razão Original')
-    axs[2, 1].legend()
-
-    axs[0, 2].plot(time_stamps, adjusted_ratio, label=f"Canal Verde ROI{i+1} a={best_a} b={best_b}", color='blue')
-    axs[0, 2].set_title(f"a={best_a} b={best_b}")
-    axs[0, 2].set_xlabel('Tempo (s)')
-    axs[0, 2].set_ylabel('Intensidade do Canal Verde')
-    axs[0, 2].legend()
-
-
-
-    plt.tight_layout()
-    plt.show()
-
-plot_image_and_ratios(frames, best_combination, best_a, best_b, all_green_rois, time_stamps, fps)
-
-
-
-# usar o valor de a e b na ROI 2 ou 3 
-adjustedROI = (best_a + best_b * all_green_rois[i])
 
 
 # Verifica o caminho do vídeo
@@ -271,45 +258,75 @@ while True:
 
 cap.release()
 
+
+
+
+
+# Encontrar a melhor combinação de ROIs e ajustar a e b
+best_a, best_b = None, None
+best_combination = None
+
+for roi_pair in close_to_one_ratios.keys():
+    # Extrai os índices das ROIs da chave
+    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
+
+    roi_values = all_green_rois[i]  
+    green_roi2=roi_values/np.mean(roi_values[:40]) # corrige pelo inicio da curva 
+    print(np.mean(roi_values[:40]))
+    a, b = find_best_a_b(green_roi2)
+
+    if a is not None and b is not None:
+        if best_a is None or best_b is None or (a and b):  
+            best_a, best_b = a, b
+            best_combination = (i, j) 
+
+
+if best_a is not None and best_b is not None:
+    print(f"Melhor a: {best_a}, Melhor b: {best_b}, ROI utilizada: {best_combination}")
+else:
+    print("Não foi possível encontrar valores válidos de a, b e gamma.")
+
+
+
+plot_image_and_ratios(frames, best_combination, best_a, best_b, all_green_rois, time_stamps, fps,green_roi2)
+
+
 # Usei isso so para conseguir calcular o CRT depois 
 RoiRed=np.array(RoiRed)
 RoiGreen=np.array(RoiGreen)
 RoiBlue= np.array(RoiBlue)
 
 
-green_roi1 = np.array(RoiGreen) ** gamma
-green_roi1 = (best_a + best_b * green_roi1)
+RoiRed = np.array(RoiRed) 
+RoiGreen = np.array(RoiGreen)
+RoiBlue = np.array(RoiBlue)
+
+green_roi1 = (best_a + best_b * RoiGreen**gamma)
 
 time_stamps = np.array(time_stamps)
 
+# Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro -
+#  é somente para poder processa usando o pyCRT
+ratiosr = green_roi1 
+ratiosg = green_roi1 
+ratiosb = green_roi1 
 
-ratios= (green_roi1/adjustedROI)
 
-# Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro - é somente para poder processa usando o pyCRT
-ratiosr = green_roi1 / adjustedROI
-ratiosg = green_roi1 / adjustedROI
-ratiosb = green_roi1 / adjustedROI
 
 # Plotagem dos resultados
 plt.figure(figsize=(10, 5))
 
 # Intensidade ROI1
 plt.subplot(3, 1, 1)
-plt.plot(time_stamps, green_roi1, label='G - ROI1 ', color='g', linewidth=2)
+plt.plot(time_stamps, RoiGreen, label='G ROI1 ', color='g', linewidth=2)
 plt.xlabel('Tempo (s)')
 plt.ylabel('Intensidade Canal Verde')
 plt.legend()
 plt.subplot(3, 1, 2)
-plt.plot(time_stamps, ratiosg, label='ROI1 corrigida', color='b',linewidth=2)
+plt.plot(time_stamps, ratiosg, label=f'G ROI1  ({best_a:.2f} + {best_b:.2f} * G)', color='b',linewidth=2)
 plt.xlabel('Tempo (s)')
 plt.ylabel('Intensidade Canal Verde')
 plt.legend()
-plt.subplot(3, 1,3)
-plt.plot(time_stamps, adjustedROI, label=f'ROI{i+1} corrigida', color='b',linewidth=2)
-plt.xlabel('Tempo (s)')
-plt.ylabel('Intensidade Canal Verde')
-plt.legend()
-
 plt.tight_layout()
 plt.show()
 
@@ -317,14 +334,18 @@ plt.show()
 
 channelsAvgIntensArr= np.column_stack((RoiRed, RoiGreen, RoiBlue))
 pcrt = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
-pcrt.showAvgIntensPlot()
+#pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
 
 
 ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
 pcrt = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
-pcrt.showAvgIntensPlot()
+#pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
+
+
+
+
 
 
 
