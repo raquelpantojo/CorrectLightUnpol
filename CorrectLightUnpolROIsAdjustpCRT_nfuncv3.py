@@ -67,28 +67,35 @@ def plot_and_save_model(model_name, params, RoiGreen1, fitted_curve1, fitted_cur
     plt.subplot(311)
     plt.plot(RoiGreen2, label="ROI 2", color='green')
     plt.title(f"Model: {model_name}")
-    plt.xlabel("Time")
-    plt.ylabel("Intensity of green channel")
-    plt.legend()
+    plt.xlabel("Time",fontsize=12)
+    plt.ylabel("Intensity of green channel",fontsize=12)
+    plt.legend(fontsize=12)
 
     # Subplot 2: ROI 1 vs Fit Exponencial
     plt.subplot(312)
     plt.plot(RoiGreen1, label="ROI 1", color='green')
     plt.plot(fitted_curve1_exp, label="Exponential Fit", color='red')
-    plt.xlabel("Time")
-    plt.ylabel("Intensity of green channel")
-    plt.legend()
+    plt.xlabel("Time",fontsize=12)
+    plt.ylabel("Intensity of green channel",fontsize=12)
+    plt.legend(fontsize=12)
 
     # Subplot 3: Fitted Curve and Equation
     plt.subplot(313)
     plt.plot(fitted_curve1, label=eq, color='blue')
-    plt.xlabel("Time")
-    plt.ylabel("Intensity of green channel")
-    plt.legend(fontsize=14)
+    plt.xlabel("Time",fontsize=12)
+    plt.ylabel("Intensity of green channel",fontsize=12)
+    plt.legend(fontsize=12)
 
     # Salvando o gráfico em um arquivo
     plt.savefig(output_filename, dpi=600)
     plt.close()
+
+
+# Função para garantir que nenhum parâmetro seja igual a zero
+def avoid_zero(param):
+    while param == 0:
+        param = np.random.uniform(0.1, 5.0)  # Defina o intervalo de valores conforme necessário
+    return param
 
 
 # Verifica o caminho do vídeo
@@ -165,7 +172,7 @@ roi3 = (x_j, y_j, w_j, h_j)
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
 # Listas para armazenar intensidades e timestamps
-RoiRed, RoiGreen, RoiBlue,Roi2, time_stamps = [], [], [], [],[]
+RoiRed, RoiGreen, RoiBlue,Roi2,Roi3, time_stamps = [], [], [], [],[],[]
 
 # Processa o vídeo frame a frame para capturar os valores das ROIs
 while True:
@@ -180,6 +187,7 @@ while True:
     
     RoiGreen.append(np.mean(roi1_frame[:, :, 1]))
     Roi2.append(np.mean(roi2_frame[:, :, 1]))
+    Roi3.append(np.mean(roi3_frame[:, :, 1]))
     
     time_stamps.append(frame_count / fps)
     frame_count += 1
@@ -187,6 +195,9 @@ while True:
 cap.release()
 
 RoiGreen = np.array(RoiGreen)
+Roi2 = np.array(Roi2)
+Roi3 = np.array(Roi3)
+
 time_stamps = np.array(time_stamps)
 
 # Normaliza a Curva 2 pela média dos primeiros 40 pontos
@@ -194,7 +205,7 @@ normalization_factor = np.mean(Roi2[:40])
 if normalization_factor == 0:
     print("Erro: O fator de normalização é zero.")
 else:
-    normalized_curve2 = Roi2 / normalization_factor
+    normalized_curve2 = Roi2 / Roi3
 
 
 
@@ -226,7 +237,7 @@ def exp_decay(x, a, b, c):
 models = {
     "Exponential": exponential,
     "Linear": linear,
-    "quadratic" :quadratic,
+    "Quadratic" :quadratic,
 }
 
 def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
@@ -253,14 +264,22 @@ def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
             attempt += 1
             try:
                 # Parâmetros de inicialização específicos para cada modelo
-                if model_name == "exponential":
-                    a_init, b_init, c_init = np.random.uniform(0.5, 1.5), np.random.uniform(0.5, 1.5), np.random.uniform(0.0, 5.0)
-                elif model_name == "linear":
-                    a_init, b_init, c_init = np.random.uniform(0.5, 2.0), np.random.uniform(0.1, 1.0), np.random.uniform(0.0, 5.0)
-                elif model_name == "quadratic":
-                    a_init, b_init, c_init = np.random.uniform(0.5, 1.5), np.random.uniform(1.0, 2.0), np.random.uniform(0.0, 5.0)
+                if model_name == "Exponential":
+                    a_init = avoid_zero(np.random.uniform(0.5, 1.5))
+                    b_init = avoid_zero(np.random.uniform(0.5, 1.5))
+                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
+                elif model_name == "Linear":
+                    a_init = avoid_zero(np.random.uniform(0.5, 2.0))
+                    b_init = avoid_zero(np.random.uniform(0.1, 1.0))
+                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
+                elif model_name == "Quadratic":
+                    a_init = avoid_zero(np.random.uniform(0.5, 1.5))
+                    b_init = avoid_zero(np.random.uniform(1.0, 2.0))
+                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
                 else:
-                    a_init, b_init, c_init = np.random.uniform(0.5, 1.5), np.random.uniform(0.5, 1.5), np.random.uniform(0.0, 5.0)
+                    a_init = avoid_zero(np.random.uniform(0.5, 1.5))
+                    b_init = avoid_zero(np.random.uniform(0.5, 1.5))
+                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
 
                 # Ajuste o modelo aos dados RoiGreen2
                 params, _ = curve_fit(model, np.arange(len(RoiGreen2)), RoiGreen2, p0=[a_init, b_init, c_init])
@@ -278,7 +297,7 @@ def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
                     c_init_curv1 = np.median(fitted_curve1) 
                     params_exp, _ = curve_fit(exponential, np.arange(len(RoiGreen1)), RoiGreen1, p0=[a_init_curv1, b_init_curv1, c_init_curv1])
                     fitted_curve1_exp = exponential(np.arange(len(RoiGreen1)), *params_exp)  # Garanta que fitted_curve1_exp seja inicializado
-                    
+                   
                     residuals = RoiGreen1 - fitted_curve1_exp
                     ss_res = np.sum(residuals**2)
                     ss_tot = np.sum((RoiGreen1 - np.mean(RoiGreen1))**2)
@@ -294,16 +313,24 @@ def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
                         best_fitted_curve1 = fitted_curve2
                     else:
                         print(f"Tentativa {attempt} do modelo {model_name} com R² = {r_squared:.4f} falhou. Tentando novamente...")
+
                 else:
                     print(f"Erro {error:.4f} do modelo {model_name} não é suficiente. Tentando novos parâmetros...")
 
                     # Caso o erro não seja suficientemente baixo, calcule novos parâmetros
-                    if model_name == "exponential":
-                        a_init, b_init, c_init = np.random.uniform(0.5, 2.0), np.random.uniform(0.5, 2.0), np.random.uniform(0.0, 5.0)
-                    elif model_name == "linear":
-                        a_init, b_init, c_init = np.random.uniform(0.5, 2.0), np.random.uniform(0.1, 1.0), np.random.uniform(0.0, 5.0)
-                    elif model_name == "quadratic":
-                        a_init, b_init, c_init = np.random.uniform(0.5, 1.5), np.random.uniform(1.0, 2.0), np.random.uniform(0.0, 5.0)
+                    if model_name == "Exponential":
+                        a_init = avoid_zero(np.random.uniform(0.5, 2.0))
+                        b_init = avoid_zero(np.random.uniform(0.5, 2.0))
+                        c_init = avoid_zero(np.random.uniform(0.1, 5.0))
+                    elif model_name == "Linear":
+                        a_init = avoid_zero(np.random.uniform(0.5, 2.0))
+                        b_init = avoid_zero(np.random.uniform(0.1, 1.0))
+                        c_init = avoid_zero(np.random.uniform(0.1, 5.0))
+                    elif model_name == "Quadratic":
+                        a_init = avoid_zero(np.random.uniform(0.5, 1.5))
+                        b_init = avoid_zero(np.random.uniform(1.0, 2.0))
+                        c_init = avoid_zero(np.random.uniform(0.1, 5.0))
+
                     params, _ = curve_fit(model, np.arange(len(RoiGreen2)), RoiGreen2, p0=[a_init, b_init, c_init])
                     fitted_curve2 = model(np.arange(len(RoiGreen2)), *params)
                     error = np.mean(np.abs(fitted_curve2 - 1))
@@ -326,7 +353,6 @@ def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
             plot_and_save_model(model_name, params, RoiGreen1, fitted_curve1, fitted_curve1_exp, RoiGreen2, r_squared, output_filename,)
 
     return best_model, best_params, best_r2, best_fitted_curve1
-
 
 
 
