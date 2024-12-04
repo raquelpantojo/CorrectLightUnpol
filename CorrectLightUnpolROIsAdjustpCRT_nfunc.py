@@ -19,6 +19,9 @@ import sys
 import matplotlib.pyplot as plt
 from itertools import combinations
 from scipy.optimize import minimize
+import numpy as np
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
 
 
 sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
@@ -118,87 +121,165 @@ def calculate_ratios(all_green_rois, num_rois):
     return ratios
 
 
-# Função para ajustar os valores de a e b
 
-"""
 
-def find_best_a_b(green_roi2):
-    best_a, best_b = None, None
+# Funções Candidatas
+def logarithmic(x, a, b, c):
+    return a + b * np.log(c * x + 1)
+
+def sinusoidal(x, a, b, c, d):
+    return a + b * np.sin(c * x + d)
+
+def power_law(x, a, b, p):
+    return a + b * np.power(x, p)
+
+def quadratic(x, a, b, c):
+    return a + b * x + c * x**2
+
+def exponential(x, a, b, c):
+    return a * np.exp(b * x) + c
+
+# Função para calcular o chi-quadrado
+def calculate_chi_squared(y_true, y_pred):
+    residuals = y_true - y_pred
+    return np.sum((residuals**2) / y_pred)
+
+# Ajuste para garantir que valores logarítmicos sejam válidos
+def safe_log(x, c=1e-10):
+    return np.log(x + c)
+
+# Função para calcular o erro
+def calculate_error(adjusted_ratio):
+    return np.mean(np.abs(adjusted_ratio - 1))
+
+
+# Função para encontrar os melhores valores de a e b para a curva green_roi2
+def find_best_a_b(green_roi2, best_func):
+    best_a, best_b, best_c = None, None, None  # Agora adicionando o parâmetro c
     best_error = float('inf')  # Inicializa o erro com um valor muito grande
 
-    # Defina os valores possíveis de a e b
+    # Defina os valores possíveis de a, b e c
     a_values = np.arange(0.1, 10.01, 0.01)
     b_values = np.arange(0.1, 10.01, 0.01)
+    c_values = np.arange(0.1, 10.01, 0.01)  # Agora também testando valores para c
+
+    # Iteração sobre todas as combinações possíveis de a, b e c
+    for a in a_values:
+        for b in b_values:
+            for c in c_values:  # Adicionando iteração para c
+                try:
+                    # Ajusta a razão com a função encontrada
+                    if best_func == logarithmic:
+                        adjusted_ratio = best_func(green_roi2, a, b, 1)  
+                    else:
+                        adjusted_ratio = best_func(green_roi2, a, b, c)  
+
+                    # Calcula o erro (diferença média absoluta entre a razão ajustada e 1)
+                    error = np.mean(np.abs(adjusted_ratio - 1))
+
+                    # Se o erro for menor que o erro anterior, armazena a nova combinação de a, b, c
+                    if error < best_error:
+                        best_error = error
+                        best_a, best_b, best_c = a, b, c  # Armazena os três parâmetros
+                        print(f"Novo melhor ajuste encontrado: a={best_a:.2f}, b={best_b:.2f}, c={best_c:.2f}, erro={best_error:.4f}")
+                except Exception as e:
+                    print(f"Erro ao ajustar {best_func.__name__} para green_roi2: {e}")
+
+    return best_a, best_b, best_c  # Retorna também o parâmetro c
+
+
+# modelos testados 
+
+models = {
+        "Exponential": exponential,
+        "Logarithmic": logarithmic,
+        "Power Law": power_law,
+        "Quadratica":quadratic
+    }
+
+#{{
+def find_best_model(green_roi1, green_roi2, models):
+    best_model = None
+    best_r2 = -np.inf
+    best_params = None
+    best_func = None
+    best_error = np.inf  # Inicializa o melhor erro com um valor grande
+
+    # Encontrar o pico máximo de green_roi1
+    max_idx = np.argmax(green_roi1)
+    x = np.arange(len(green_roi1))
     
-     
-    # Iteração sobre todas as combinações possíveis de a e b
-    for a in a_values:
-        for b in b_values:
-            # Ajusta a razão com a função exponencial
-            adjusted_ratio = a + b *(green_roi2)  # Função exponencial
+    # Dados após o pico para ROI1
+    x_after = x[max_idx:]
+    y_after = green_roi1[max_idx:]
+    
+    # Teste dos modelos para green_roi2
+    for name, func in models.items():
+        try:
+            print(f"Testando o modelo {name} para green_roi2...")
+
+            # Ajuste de cada modelo para green_roi2
+            if func == logarithmic:
+                params, _ = curve_fit(func, x_after, green_roi2[max_idx:], maxfev=5000, bounds=(0, [10, 10, 10]))
+            else:
+                params, _ = curve_fit(func, x_after, green_roi2[max_idx:], maxfev=5000)
+
+            adjusted_ratio = func(x_after, *params)  # Curva ajustada para ROI2
+            error = calculate_error(adjusted_ratio)  # Calcula o erro
+
+            # Se o erro for suficientemente pequeno, considere o ajuste bom
+            if error < 0.005:
+                print(f"Modelo {name} ajustado com erro = {error:.4f}")
+                if error < best_error:
+                    best_error = error
+                    best_model = name
+                    best_params = params
+                    best_func = func
+
+        except Exception as e:
+            print(f"Erro ao ajustar o modelo {name} para green_roi2: {e}")
+
+    # Se encontrou um bom modelo para ROI2, ajuste para ROI1 usando o melhor modelo encontrado
+    if best_model:
+        print(f"Melhor modelo encontrado: {best_model} com erro = {best_error:.4f}")
+
+        # Ajuste para green_roi1 com os parâmetros do melhor modelo
+        x_before = x[:max_idx]
+        y_before = green_roi1[:max_idx]
+        
+        try:
+            # Ajuste o modelo escolhido para ROI1
+            if best_func == logarithmic:
+                params_roi1, _ = curve_fit(best_func, x_before, y_before, maxfev=5000, bounds=(0, [10, 10, 10]))
+            else:
+                params_roi1, _ = curve_fit(best_func, x_before, y_before, maxfev=5000)
             
-            # Calcula o erro (diferença média absoluta entre a razão ajustada e 1)
-            error = np.mean(np.abs(adjusted_ratio - 1))
-            
-            # Se o erro for menor que o erro anterior, armazena a nova combinação de a, b
-            if error < best_error:
-                best_error = error
-                best_a, best_b = a, b
+            # Predição para ROI1 com o melhor modelo
+            y_pred = best_func(x_before, *params_roi1)
+            r2 = r2_score(y_before, y_pred)
+            chi2 = np.sum((y_before - y_pred)**2)  # Chi-quadrado
 
-    return best_a, best_b
-"""
-# testando todos os modelos 
-def find_best_a_b(green_roi2):
-    best_a, best_b, best_model = None, None, None
-    best_error = float('inf')  # Inicializa o erro com um valor muito grande
+            # Verificar se os critérios de R2 e Qui-quadrado são os melhores
+            print(f"Ajuste para ROI1: R2={r2:.4f}, Chi2={chi2:.4f}")
 
-    # Defina os valores possíveis de a, b, c, p e d
-    a_values = np.arange(0.1, 10.01, 0.01)
-    b_values = np.arange(0.1, 10.01, 0.01)
-    c_values = np.arange(0.1, 10.01, 0.01)
-    p_values = np.arange(0.1, 10.01, 0.01)
-    d_values = np.arange(0.1, 10.01, 0.01)
+            if r2 > best_r2 and chi2 < best_error:
+                best_r2 = r2
+                best_model = name
+                best_params = params_roi1
+                best_func = best_func  # Atualiza a função com o melhor ajuste
 
-    # Teste os diferentes modelos de ajuste
-    for a in a_values:
-        for b in b_values:
-            for c in c_values:
-                for p in p_values:
-                    for d in d_values:
-                        # Modelo 1: Logarítmico
-                        adjusted_ratio_log = a + b * np.log(c * green_roi2 + 1)
-                        error_log = np.mean(np.abs(adjusted_ratio_log - 1))
-                        
-                        # Modelo 2: Potência
-                        adjusted_ratio_pow = a + b * np.power(green_roi2, p)
-                        error_pow = np.mean(np.abs(adjusted_ratio_pow - 1))
+            # Retorna a curva ajustada para ROI1
+            adjusted_curve_roi1 = best_func(x, *params_roi1)
+            return best_model, best_params, best_r2, best_error, best_func, adjusted_curve_roi1,best_combination
 
-                        # Modelo 3: Senoidal
-                        adjusted_ratio_sin = a + b * np.sin(c * green_roi2 + d)
-                        error_sin = np.mean(np.abs(adjusted_ratio_sin - 1))
+        except Exception as e:
+            print(f"Erro ao ajustar o modelo {best_model} para ROI1: {e}")
 
-                        # Modelo 4: Sigmoide
-                        adjusted_ratio_sigmoid = a / (1 + np.exp(-b * (green_roi2 - c)))
-                        error_sigmoid = np.mean(np.abs(adjusted_ratio_sigmoid - 1))
+    return best_model, best_params, best_r2, best_error, best_func, None , best_combination
 
-                        # Modelo 5: Quadrático
-                        adjusted_ratio_quad = a + b * green_roi2 + c * np.power(green_roi2, 2)
-                        error_quad = np.mean(np.abs(adjusted_ratio_quad - 1))
 
-                        # Se o erro do modelo logarítmico for o menor, armazene os parâmetros
-                        if error_log < best_error:
-                            best_error = error_log
-                            best_a, best_b, best_model = a, b, 'Log'
+#}}
 
-                        # Se o erro do modelo de potência for o menor, armazene os parâmetros
-                        if error_pow < best_error:
-                            best_error = error_pow
-                            best_a, best_b, best_model = a, b, 'Power'
-
-                        # Repita o processo para os outros modelos
-                        # Se necessário, adicione verificações para `error_sin`, `error_sigmoid`, `error_quad`.
-
-    return best_a, best_b, best_model
 
 
 
@@ -297,8 +378,10 @@ def select_rois():
             break
 
 # Selecionar as ROIs
-#select_rois()
+# select_rois()
+# usa uma ROI conhecida 
 roi1=(553, 113, 91, 88)
+
 # Reinicia o vídeo
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
@@ -324,6 +407,7 @@ while True:
 
 cap.release()
 
+time_stamps = np.array(time_stamps)
 
 
 
@@ -335,66 +419,43 @@ best_combination = None
 for roi_pair in close_to_one_ratios.keys():
     # Extrai os índices das ROIs da chave
     i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
+    best_combination = {i,j}
 
     roi_values = all_green_rois[i]  
     green_roi2=roi_values/np.mean(roi_values[:40]) # corrige pelo inicio da curva 
     #print(np.mean(roi_values[:40]))
-    a, b = find_best_a_b(green_roi2)
 
-    if a is not None and b is not None:
-        if best_a is None or best_b is None or (a and b):  
-            best_a, best_b = a, b
-            best_combination = (i, j) 
+    RoiRed=np.array(RoiRed)
+    RoiGreen=np.array(RoiGreen)
+    RoiBlue= np.array(RoiBlue)
 
 
-if best_a is not None and best_b is not None:
-    print(f"Melhor a: {best_a}, Melhor b: {best_b}, ROI utilizada: {best_combination}")
-else:
-    print("Não foi possível encontrar valores válidos de a, b ")
+    RoiRed = np.array(RoiRed) 
+    RoiGreen = np.array(RoiGreen)
+    RoiBlue = np.array(RoiBlue)
 
+    green_roi1 = RoiGreen
+
+
+
+
+    # Exemplo de uso
+    best_model, best_params, best_r2, best_a, best_b,adjusted_curve_roi1,best_combination = find_best_model(green_roi1, green_roi2, models)
+    print(f"Melhor modelo: {best_model} com R^2 = {best_r2:.3f}")
+
+    
+
+
+ratiosr = adjusted_curve_roi1 
+ratiosg = adjusted_curve_roi1 
+ratiosb = adjusted_curve_roi1 
 
 
 plot_image_and_ratios(frames, best_combination, best_a, best_b, all_green_rois, time_stamps, fps,green_roi2)
 
 
-# Usei isso so para conseguir calcular o CRT depois 
-RoiRed=np.array(RoiRed)
-RoiGreen=np.array(RoiGreen)
-RoiBlue= np.array(RoiBlue)
 
-
-
-green_roi1 = (best_a + best_b *(RoiGreen))
-
-time_stamps = np.array(time_stamps)
-
-# Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro -
-#  é somente para poder processa usando o pyCRT
-ratiosr = green_roi1 
-ratiosg = green_roi1 
-ratiosb = green_roi1 
-
-
-
-# Plotagem dos resultados
-plt.figure(figsize=(10, 5))
-
-# Intensidade ROI1
-plt.subplot(3, 1, 1)
-plt.plot(time_stamps, RoiGreen, label='G ROI1 ', color='g', linewidth=2)
-plt.xlabel('Tempo (s)')
-plt.ylabel('Intensidade Canal Verde')
-plt.legend()
-plt.subplot(3, 1, 2)
-plt.plot(time_stamps, ratiosg, label=f'G ROI1  ({best_a:.2f} + {best_b:.2f} * (ROI1 G/ROI2 G))', color='b',linewidth=2)
-plt.xlabel('Tempo (s)')
-plt.ylabel('Intensidade Canal Verde')
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-
-
+# Testa o CRT:
 channelsAvgIntensArr= np.column_stack((RoiRed, RoiGreen, RoiBlue))
 pcrt = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
 #pcrt.showAvgIntensPlot()
@@ -408,7 +469,27 @@ pcrt.showPCRTPlot()
 
 
 
+# Agora, plotamos os dados e o ajuste exponencial
+x = np.arange(len(green_roi1))
+plt.plot(x, green_roi1, 'bo', label='Dados green_roi1')
 
+# Plotamos o ajuste exponencial para o melhor modelo
+if best_model == 'Exponential':
+    plt.plot(x, exponential(x, *best_params), 'r-', label='Ajuste Exponencial')
+
+# Plotamos os ajustes para todos os outros modelos também
+for name, func in models.items():
+    try:
+        params, _ = curve_fit(func, x, green_roi1, maxfev=5000)
+        plt.plot(x, func(x, *params), label=f'Ajuste {name}')
+    except Exception as e:
+        print(f"Erro ao ajustar o modelo {name}: {e}")
+
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.title('Ajuste de Modelos para green_roi1')
+plt.legend()
+plt.show()
 
 
 
