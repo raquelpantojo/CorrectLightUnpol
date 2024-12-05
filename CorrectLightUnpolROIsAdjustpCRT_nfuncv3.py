@@ -12,7 +12,7 @@ from scipy.signal import savgol_filter
 # Caminho base para os arquivos do projeto
 base_path = "C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC casa
 folder_name = "teste1"
-video_name = "corrected_v7_gamma=1.53.mp4"
+video_name = "corrected_v7_gamma=1.mp4."
 roi_width = 60
 roi_height = 60
 num_rois = 200  # Número de ROIs a serem criadas
@@ -43,48 +43,35 @@ def normalize(data):
     return (data - data_min) / (data_max - data_min)
 
 def plot_and_save_model(model_name, params, RoiGreen1, fitted_curve1, fitted_curve1_exp, RoiGreen2, r_squared, output_filename):
-
-    # Gerando a equação formatada para a legenda com base no modelo
-    if model_name == "exponential":
-        eq = f"{model_name}: $y = {params[0]:.2f}e^{{({params[1]:.2f}(x-{params[2]:.2f}))}}$, $R^2 = {r_squared:.4f}$"
-    elif model_name == "power_law":
-        eq = f"{model_name}: $y = {params[0]:.2f}x^{params[1]:.2f}$, $R^2 = {r_squared:.4f}$ "
-    elif model_name == "logarithmic":
-        eq = f"{model_name}: $y = {params[0]:.2f} \log(x) + {params[1]:.2f}$, $R^2 = {r_squared:.4f}$"
-    elif model_name =="Quadratic":
-        eq = f"{model_name}: $y = {params[0]:.2f}x^2 + {params[1]:.2f}x + {params[2]:.2f}$"
-    elif model_name == "gaussiano":
-        eq = f"{model_name}: $y = {params[0]:.2f} \exp\left(-\\frac{{(x - {params[2]:.2f})^2}}{{2{params[1]:.2f}^2}}\\right)$"
-    elif model_name =="Linear":
-        eq = f"{model_name}: $y = {params[0]:.2f} + {params[1]:.2f}x + {params[2]:.2f}$"
-    else:
-         eq = f"{model_name}: Não reconhecido"
-    
+  
     # Criando o gráfico
     plt.figure()
     
     # Subplot 1: ROI 2
-    plt.subplot(311)
+    plt.subplot(211)
     plt.plot(RoiGreen2, label="ROI 2", color='green')
-    plt.title(f"Model: {model_name}")
+    plt.title(f"Model: {model_name} r^2:{r_squared}")
     plt.xlabel("Time",fontsize=12)
     plt.ylabel("Intensity of green channel",fontsize=12)
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=10)
 
     # Subplot 2: ROI 1 vs Fit Exponencial
-    plt.subplot(312)
-    plt.plot(RoiGreen1, label="ROI 1", color='green')
+    plt.subplot(212)
+    plt.plot(fitted_curve1, label="ROI 1 - corrigida", color='green')
     plt.plot(fitted_curve1_exp, label="Exponential Fit", color='red')
     plt.xlabel("Time",fontsize=12)
     plt.ylabel("Intensity of green channel",fontsize=12)
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=10)
 
-    # Subplot 3: Fitted Curve and Equation
+    """   # Subplot 3: Fitted Curve and Equation
     plt.subplot(313)
-    plt.plot(fitted_curve1, label=eq, color='blue')
+    plt.plot(RoiGreen1, color='blue')
     plt.xlabel("Time",fontsize=12)
     plt.ylabel("Intensity of green channel",fontsize=12)
-    plt.legend(fontsize=12)
+    plt.legend(fontsize=10)
+
+    """
+ 
 
     # Salvando o gráfico em um arquivo
     plt.savefig(output_filename, dpi=600)
@@ -201,18 +188,18 @@ Roi3 = np.array(Roi3)
 time_stamps = np.array(time_stamps)
 
 # Normaliza a Curva 2 pela média dos primeiros 40 pontos
-normalization_factor = np.mean(Roi2[:40])
+normalization_factor = np.mean(Roi2[:30])
 if normalization_factor == 0:
     print("Erro: O fator de normalização é zero.")
 else:
-    normalized_curve2 = Roi2 / Roi3
+    normalized_curve2 = Roi2 / normalization_factor
 
 
 
 
 # Função para ajuste exponencial, logarítmico, etc.
 def exponential(x, a, b, c):
-    return a * np.exp(b * (x - c))
+    return a * np.exp(b * x) + c
 
 def logarithmic(x, a, b, c):
     return a * np.log(b * (x - c))
@@ -226,133 +213,134 @@ def quadratic(x, a, b, c):
 def gaussian_model(x, a, b, c):
     return a * np.exp(-(x - c)**2 / (2 * b**2))
 
-def linear(x, a, b,c):
-    return a + b * x + c
+def linear(x, a, b):
+    return a + b * x 
 
 def exp_decay(x, a, b, c):
     return a * np.exp(-b * x) + c
    
+def polynomial_4th_order(x, a, b, c, d, e):
+    return a * (x ** 4) + b * (x ** 3) + c * (x ** 2) + d * x + e
 
 # Dicionário dos modelos
 models = {
-    "Exponential": exponential,
+    #"Exponential": exponential,
     "Linear": linear,
-    "Quadratic" :quadratic,
+    #"Polynomial_4th_Order": polynomial_4th_order ,
+    #"Quadratic":quadratic
 }
+
+# Função para calcular o erro
+def calculate_error(adjusted_ratio):
+    return np.mean(np.abs(adjusted_ratio - 1))
+
+def calculate_r2(observed, fitted):
+    residuals = observed - fitted
+    ss_res = np.sum(residuals**2)
+    ss_tot = np.sum((observed - np.mean(observed))**2)
+    return 1 - (ss_res / ss_tot)
+
+def initialize_params(model_name):
+    if model_name == "Exponential":
+        return [
+            avoid_zero(np.random.uniform(0.5, 10)),  
+            avoid_zero(np.random.uniform(-0.5, 10.5)), 
+            avoid_zero(np.random.uniform(0.1, 5.0))    
+        ]
+    elif model_name == "Linear":
+        return [
+            avoid_zero(np.random.uniform(0.1, 10.0)),  
+            avoid_zero(np.random.uniform(0.1, 10.0))   
+        ]
+    elif model_name == "Quadratic":
+        # Parâmetros para um modelo quadrático: ax^2 + bx + c
+        return [
+            avoid_zero(np.random.uniform(-5.0, 5.0)),  # Coeficiente a
+            avoid_zero(np.random.uniform(-5.0, 5.0)),  # Coeficiente b
+            avoid_zero(np.random.uniform(-5.0, 5.0))   # Coeficiente c
+        ]
+    else:
+        raise ValueError("Modelo não suportado.")
+
+def initialize_params_exponential(data):
+    # Inicializa a partir de uma estimativa dos dados
+    a = np.max(data)  # Usar o máximo dos dados para 'a'
+    b = -0.01  # Um valor inicial para o decaimento (valor negativo para uma exponencial decrescente)
+    c = np.min(data)  # Usar o mínimo dos dados para 'c'
+    return [a, b, c]
 
 def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
     best_model = None
     best_r2 = -np.inf
     best_params = None
     best_fitted_curve1 = None
-    fitted_curve1_exp = None  # Defina a variável aqui, antes de usá-la.
+    fitted_curve1_exp = None
 
     if len(RoiGreen1) > 0:
         max_idx = np.argmax(RoiGreen1)
+        RoiGreen1 = RoiGreen1[max_idx:]
+        RoiGreen2 = RoiGreen2[max_idx:]
+
+        
     else:
         print("Erro: RoiGreen1 está vazio.")
-        return None, None, None, None
-
-    # Deixa somente a parte do decaimento
-    RoiGreen1 = RoiGreen1[max_idx:]
-    RoiGreen2 = RoiGreen2[max_idx:]
+        return None, None, None, None, None, None
 
     for model_name, model in models.items():
         attempt = 0
         found_good_fit = False
+
         while attempt < max_attempts and not found_good_fit:
             attempt += 1
             try:
-                # Parâmetros de inicialização específicos para cada modelo
-                if model_name == "Exponential":
-                    a_init = avoid_zero(np.random.uniform(0.5, 1.5))
-                    b_init = avoid_zero(np.random.uniform(0.5, 1.5))
-                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
-                elif model_name == "Linear":
-                    a_init = avoid_zero(np.random.uniform(0.5, 2.0))
-                    b_init = avoid_zero(np.random.uniform(0.1, 1.0))
-                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
-                elif model_name == "Quadratic":
-                    a_init = avoid_zero(np.random.uniform(0.5, 1.5))
-                    b_init = avoid_zero(np.random.uniform(1.0, 2.0))
-                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
-                else:
-                    a_init = avoid_zero(np.random.uniform(0.5, 1.5))
-                    b_init = avoid_zero(np.random.uniform(0.5, 1.5))
-                    c_init = avoid_zero(np.random.uniform(0.1, 5.0))
+                params_init = initialize_params(model_name)
+                params, _ = curve_fit(model, np.arange(len(RoiGreen2)), RoiGreen2, p0=params_init)
+                fittedROI2 = model(np.arange(len(RoiGreen2)), *params)
+                error = calculate_error(fittedROI2)
 
-                # Ajuste o modelo aos dados RoiGreen2
-                params, _ = curve_fit(model, np.arange(len(RoiGreen2)), RoiGreen2, p0=[a_init, b_init, c_init])
-                fitted_curve2 = model(np.arange(len(RoiGreen2)), *params)
-                error = np.mean(np.abs(fitted_curve2 - 1))
-
-                # Verifica se o erro é suficientemente pequeno
-                if error < 0.01:
-                    print(f"Modelo {model_name} ajustado com erro = {error:.4f}")
+                if error < 0.01:  
+                    print("Erros:",error)
                     fitted_curve1 = model(np.arange(len(RoiGreen1)), *params)
+                    #tentativa de usar a ROI1 mesmo
+                    params_init_exp = initialize_params_exponential(fitted_curve1)
+                    params_exp, _ = curve_fit(exponential, np.arange(len(fitted_curve1)), fitted_curve1, p0=params_init_exp)
 
-                    # Ajuste para o modelo exponencial de RoiGreen1
-                    a_init_curv1 = np.max(fitted_curve1)  
-                    b_init_curv1 = -0.1  
-                    c_init_curv1 = np.median(fitted_curve1) 
-                    params_exp, _ = curve_fit(exponential, np.arange(len(RoiGreen1)), RoiGreen1, p0=[a_init_curv1, b_init_curv1, c_init_curv1])
-                    fitted_curve1_exp = exponential(np.arange(len(RoiGreen1)), *params_exp)  # Garanta que fitted_curve1_exp seja inicializado
-                   
-                    residuals = RoiGreen1 - fitted_curve1_exp
-                    ss_res = np.sum(residuals**2)
-                    ss_tot = np.sum((RoiGreen1 - np.mean(RoiGreen1))**2)
-                    r_squared = 1 - (ss_res / ss_tot)
+                    #params_exp, _ = curve_fit(exponential, np.arange(len(RoiGreen1)), RoiGreen1)
+                    fitted_curve1_exp = exponential(np.arange(len(fitted_curve1)), *params_exp)
+                    r_squared_exp = calculate_r2(fitted_curve1, fitted_curve1_exp)
+                    
+                    plt.figure(figsize=(8, 6))  # Ajusta o tamanho da figura
+                    plt.plot(fitted_curve1_exp, label="Exponential Fit", color='red')
+                    plt.close()
+                    print("Valores de R^2:", r_squared_exp)
 
-                    # Verifica se o ajuste é bom o suficiente
-                    if r_squared > 0.8:
-                        print(f"Modelo {model_name} com R² = {r_squared:.4f} encontrado no {attempt}º tentativa!")
+
+
+                    if r_squared_exp > 0.6:
+                        print(f"Modelo {model_name} com R² = {r_squared_exp:.4f} encontrado!")
                         found_good_fit = True
-                        best_r2 = r_squared
                         best_model = model_name
+                        best_r2 = r_squared_exp
                         best_params = params
-                        best_fitted_curve1 = fitted_curve2
-                    else:
-                        print(f"Tentativa {attempt} do modelo {model_name} com R² = {r_squared:.4f} falhou. Tentando novamente...")
+                        fitted_curve_best = model(np.arange(len(RoiGreen1)), *best_params)
+                        params_exp, _ = curve_fit(exponential, np.arange(len(fitted_curve1)), fitted_curve1)
+                        fitted_curve1_exp_best = exponential(np.arange(len(fitted_curve1)), *params_exp)
 
-                else:
-                    print(f"Erro {error:.4f} do modelo {model_name} não é suficiente. Tentando novos parâmetros...")
-
-                    # Caso o erro não seja suficientemente baixo, calcule novos parâmetros
-                    if model_name == "Exponential":
-                        a_init = avoid_zero(np.random.uniform(0.5, 2.0))
-                        b_init = avoid_zero(np.random.uniform(0.5, 2.0))
-                        c_init = avoid_zero(np.random.uniform(0.1, 5.0))
-                    elif model_name == "Linear":
-                        a_init = avoid_zero(np.random.uniform(0.5, 2.0))
-                        b_init = avoid_zero(np.random.uniform(0.1, 1.0))
-                        c_init = avoid_zero(np.random.uniform(0.1, 5.0))
-                    elif model_name == "Quadratic":
-                        a_init = avoid_zero(np.random.uniform(0.5, 1.5))
-                        b_init = avoid_zero(np.random.uniform(1.0, 2.0))
-                        c_init = avoid_zero(np.random.uniform(0.1, 5.0))
-
-                    params, _ = curve_fit(model, np.arange(len(RoiGreen2)), RoiGreen2, p0=[a_init, b_init, c_init])
-                    fitted_curve2 = model(np.arange(len(RoiGreen2)), *params)
-                    error = np.mean(np.abs(fitted_curve2 - 1))
-                    print(f"Nova tentativa com erro = {error:.4f}")
+              
 
             except Exception as e:
-                print(f"Erro ao ajustar modelo {model_name} na tentativa {attempt}: {e}")
+                print(f"Erro durante o ajuste do modelo {model_name} na tentativa {attempt}: {e}")
                 continue
 
         if found_good_fit:
-            print(f"Modelo {model_name} ajustado com sucesso após {attempt} tentativas.")
-        else:
-            print(f"Modelo {model_name} não conseguiu R² > 0.7 após {max_attempts} tentativas.")
+            output_filename = f"{model_name}_final_plot.png"
+            plot_and_save_model(model_name, best_params, RoiGreen1, fitted_curve_best, fitted_curve1_exp_best, RoiGreen2, best_r2, output_filename)
 
-        # Gerar e salvar o gráfico, independente do resultado
-        for model_name, model_func in models.items():
-            params = [params[0], params[1], params[2]]  
-            fitted_curve1 = model_func(RoiGreen1, *params)  
-            output_filename = f"{model_name}_plot.png"  
-            plot_and_save_model(model_name, params, RoiGreen1, fitted_curve1, fitted_curve1_exp, RoiGreen2, r_squared, output_filename,)
+    if best_model is None:
+        print("Nenhum ajuste adequado foi encontrado.")
+        return None, None, None, None, None, None
 
-    return best_model, best_params, best_r2, best_fitted_curve1
+    return best_model, best_r2, best_params, best_fitted_curve1, fitted_curve1_exp, best_r2
 
 
 
