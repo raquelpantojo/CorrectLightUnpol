@@ -9,6 +9,12 @@ from sklearn.metrics import r2_score
 from scipy.signal import savgol_filter
 
 
+sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
+#sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
+
+from src.pyCRT import PCRT  
+
+
 # Caminho base para os arquivos do projeto
 base_path = "C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC casa
 folder_name = "teste1"
@@ -42,36 +48,33 @@ def normalize(data):
     data_max = np.max(data)
     return (data - data_min) / (data_max - data_min)
 
-def plot_and_save_model(model_name, params, RoiGreen1, fitted_curve1, fitted_curve1_exp, RoiGreen2, r_squared, output_filename):
-  
+
+
+def plot_and_save_model(model_name, best_params, RoiDecayGreen1, fitted_curve1, fitted_curve1_exp, RoiDecayGreen2, best_r2, output_filename):
     # Criando o gráfico
     plt.figure()
     
-    # Subplot 1: ROI 2
-    plt.subplot(211)
-    plt.plot(RoiGreen2, label="ROI 2", color='green')
-    plt.title(f"Model: {model_name} r^2:{r_squared}")
+    #  ROI 1
+    plt.subplot(311)
+    plt.plot(RoiDecayGreen1, label="ROI 1 ", color='green')
+    plt.title(f"Model: {model_name} r^2:{best_r2: .2f}")
     plt.xlabel("Time",fontsize=12)
-    plt.ylabel("Intensity of green channel",fontsize=12)
     plt.legend(fontsize=10)
 
-    # Subplot 2: ROI 1 vs Fit Exponencial
-    plt.subplot(212)
-    plt.plot(fitted_curve1, label="ROI 1 - corrigida", color='green')
+    #  ROI 2
+    plt.subplot(312)
+    plt.plot(RoiDecayGreen2, label="ROI 2", color='green')
+    plt.xlabel("Time",fontsize=12)
+    plt.ylabel("Intensity of G-channel normalized",fontsize=12)
+    plt.legend(fontsize=10)
+
+
+    plt.subplot(313)
+    plt.plot(fitted_curve1,label="ROI 1 - corrigida",  color='blue')
     plt.plot(fitted_curve1_exp, label="Exponential Fit", color='red')
     plt.xlabel("Time",fontsize=12)
-    plt.ylabel("Intensity of green channel",fontsize=12)
     plt.legend(fontsize=10)
 
-    """   # Subplot 3: Fitted Curve and Equation
-    plt.subplot(313)
-    plt.plot(RoiGreen1, color='blue')
-    plt.xlabel("Time",fontsize=12)
-    plt.ylabel("Intensity of green channel",fontsize=12)
-    plt.legend(fontsize=10)
-
-    """
- 
 
     # Salvando o gráfico em um arquivo
     plt.savefig(output_filename, dpi=600)
@@ -187,13 +190,15 @@ Roi3 = np.array(Roi3)
 
 time_stamps = np.array(time_stamps)
 
-# Normaliza a Curva 2 pela média dos primeiros 40 pontos
+# Normaliza a Curva 1 pela média dos primeiros 30 pontos
+RoiGreen = RoiGreen / np.mean(RoiGreen[:30])
+
+# Normaliza a Curva 2 pela média dos primeiros 30 pontos
 normalization_factor = np.mean(Roi2[:30])
 if normalization_factor == 0:
     print("Erro: O fator de normalização é zero.")
 else:
     normalized_curve2 = Roi2 / normalization_factor
-
 
 
 
@@ -222,12 +227,21 @@ def exp_decay(x, a, b, c):
 def polynomial_4th_order(x, a, b, c, d, e):
     return a * (x ** 4) + b * (x ** 3) + c * (x ** 2) + d * x + e
 
+def polynomial_3rd_order(x, a, b, c, d):
+    return a * (x ** 3) + b * (x ** 2) + c * x + d
+
+
 # Dicionário dos modelos
 models = {
     #"Exponential": exponential,
-    "Linear": linear,
-    #"Polynomial_4th_Order": polynomial_4th_order ,
-    #"Quadratic":quadratic
+    #"Linear": linear,
+    #"Quadratic": quadratic,
+    #"Logarithmic": logarithmic,
+    #"Power Law": power_law,
+   #"Gaussian": gaussian_model,
+    #"Exp Decay": exp_decay,
+    #"Polynomial 4th Order": polynomial_4th_order,
+    "Polynomial 3rd Order": polynomial_3rd_order
 }
 
 # Função para calcular o erro
@@ -243,33 +257,74 @@ def calculate_r2(observed, fitted):
 def initialize_params(model_name):
     if model_name == "Exponential":
         return [
-            avoid_zero(np.random.uniform(0.5, 10)),  
-            avoid_zero(np.random.uniform(-0.5, 10.5)), 
-            avoid_zero(np.random.uniform(0.1, 5.0))    
+            np.random.uniform(0.1, 10),   # 'a' positivo para amplitude
+            -np.random.uniform(0.1, 1),  # 'b' negativo para decaimento
+            np.random.uniform(0, 1)      # 'c' pequeno para deslocamento
         ]
     elif model_name == "Linear":
+
         return [
-            avoid_zero(np.random.uniform(0.1, 10.0)),  
-            avoid_zero(np.random.uniform(0.1, 10.0))   
+            np.random.uniform(-1, 10),  # Intercepto
+            np.random.uniform(-1, 10)  # Inclinação
         ]
     elif model_name == "Quadratic":
-        # Parâmetros para um modelo quadrático: ax^2 + bx + c
         return [
-            avoid_zero(np.random.uniform(-5.0, 5.0)),  # Coeficiente a
-            avoid_zero(np.random.uniform(-5.0, 5.0)),  # Coeficiente b
-            avoid_zero(np.random.uniform(-5.0, 5.0))   # Coeficiente c
+            np.random.uniform(-10, 10),  # Coeficiente quadrático
+            np.random.uniform(-10, 10), # Coeficiente linear
+            np.random.uniform(-10, 10)  # Termo constante
+        ]
+    elif model_name == "Logarithmic":
+        return [
+            np.random.uniform(0.1, 10),  # Amplitude
+            np.random.uniform(0.1, 2),  # Fator de escala
+            np.random.uniform(-10, 10)  # Deslocamento
+        ]
+    elif model_name == "Power Law":
+        return [
+            np.random.uniform(0.1, 5),   # Coeficiente
+            np.random.uniform(0.1, 3),  # Expoente
+            np.random.uniform(-10, 10)  # Deslocamento
+        ]
+    elif model_name == "Gaussian":
+        return [
+            np.random.uniform(0.1, 10),  # Altura do pico
+            np.random.uniform(1, 5),    # Largura (desvio padrão)
+            np.random.uniform(-10, 10)  # Posição do centro
+        ]
+    elif model_name == "Exp Decay":
+        return [
+            np.random.uniform(1, 10),   # Amplitude inicial
+            np.random.uniform(0.1, 1), # Taxa de decaimento
+            np.random.uniform(0, 1)    # Deslocamento vertical
+        ]
+    elif model_name == "Polynomial 4th Order":
+        return [
+            np.random.uniform(-1, 1),   # Coeficiente x⁴
+            np.random.uniform(-1, 1),  # Coeficiente x³
+            np.random.uniform(-1, 1),  # Coeficiente x²
+            np.random.uniform(-1, 1),  # Coeficiente x
+            np.random.uniform(-1, 1)   # Constante
+        ]
+    elif model_name == "Polynomial 3rd Order":
+        return [
+            np.random.uniform(-1, 1),   # Coeficiente x³
+            np.random.uniform(-1, 1),   # Coeficiente x²
+            np.random.uniform(-1, 1),   # Coeficiente x
+            np.random.uniform(-1, 1)    # Constante
         ]
     else:
         raise ValueError("Modelo não suportado.")
 
+
+
 def initialize_params_exponential(data):
-    # Inicializa a partir de uma estimativa dos dados
-    a = np.max(data)  # Usar o máximo dos dados para 'a'
-    b = -0.01  # Um valor inicial para o decaimento (valor negativo para uma exponencial decrescente)
-    c = np.min(data)  # Usar o mínimo dos dados para 'c'
+    a = np.max(data)  
+    b = -0.01  
+    c = np.min(data) 
     return [a, b, c]
 
-def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
+
+def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=20):
     best_model = None
     best_r2 = -np.inf
     best_params = None
@@ -278,8 +333,12 @@ def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
 
     if len(RoiGreen1) > 0:
         max_idx = np.argmax(RoiGreen1)
-        RoiGreen1 = RoiGreen1[max_idx:]
-        RoiGreen2 = RoiGreen2[max_idx:]
+        RoiDecayGreen1 = RoiGreen1[max_idx:]
+        #RoiDecayGreen1=normalize(RoiDecayGreen1)
+
+        RoiDecayGreen2 = RoiGreen2[max_idx:]
+        
+        #RoiGreen2=normalize(RoiGreen2)
 
         
     else:
@@ -294,59 +353,81 @@ def bestfit_models(RoiGreen1, RoiGreen2, models, max_attempts=400):
             attempt += 1
             try:
                 params_init = initialize_params(model_name)
-                params, _ = curve_fit(model, np.arange(len(RoiGreen2)), RoiGreen2, p0=params_init)
-                fittedROI2 = model(np.arange(len(RoiGreen2)), *params)
+                if None in params_init:
+                    print(f"Erro: parâmetros de inicialização inválidos para o modelo {model_name}")
+                    continue
+                try:
+                    params, _ = curve_fit(model, np.arange(len(RoiDecayGreen2)), RoiDecayGreen2, p0=params_init)
+                except Exception as e:
+                    print(f"Erro ao ajustar o modelo {model_name}: {e}")
+                    continue
+                fittedROI2 = model(np.arange(len(RoiDecayGreen2)), *params)
                 error = calculate_error(fittedROI2)
 
                 if error < 0.01:  
                     print("Erros:",error)
-                    fitted_curve1 = model(np.arange(len(RoiGreen1)), *params)
-                    #tentativa de usar a ROI1 mesmo
+                    
+                    # primeiro ajuste com os parametros obtidos pelo ajuste da função da ROI 2
+                    fitted_curve1 = model(np.arange(len(RoiDecayGreen1)), *params)
+                    
+                    #melhorando os parametroos iniciais de ajuste 
                     params_init_exp = initialize_params_exponential(fitted_curve1)
                     params_exp, _ = curve_fit(exponential, np.arange(len(fitted_curve1)), fitted_curve1, p0=params_init_exp)
 
-                    #params_exp, _ = curve_fit(exponential, np.arange(len(RoiGreen1)), RoiGreen1)
                     fitted_curve1_exp = exponential(np.arange(len(fitted_curve1)), *params_exp)
                     r_squared_exp = calculate_r2(fitted_curve1, fitted_curve1_exp)
                     
-                    plt.figure(figsize=(8, 6))  # Ajusta o tamanho da figura
-                    plt.plot(fitted_curve1_exp, label="Exponential Fit", color='red')
-                    plt.close()
                     print("Valores de R^2:", r_squared_exp)
 
-
-
-                    if r_squared_exp > 0.6:
-                        print(f"Modelo {model_name} com R² = {r_squared_exp:.4f} encontrado!")
+                    if r_squared_exp > 0.8:
+                        print(f"Modelo {model_name} R² = {r_squared_exp:.4f} parametros: {params} ")
                         found_good_fit = True
-                        best_model = model_name
-                        best_r2 = r_squared_exp
                         best_params = params
-                        fitted_curve_best = model(np.arange(len(RoiGreen1)), *best_params)
-                        params_exp, _ = curve_fit(exponential, np.arange(len(fitted_curve1)), fitted_curve1)
-                        fitted_curve1_exp_best = exponential(np.arange(len(fitted_curve1)), *params_exp)
+                    
+                    #fitted_curve_best = model(np.arange(len(RoiDecayGreen1)), *best_params)
+                    #params_exp, _ = curve_fit(exponential, np.arange(len(fitted_curve_best)), fitted_curve_best)
+                    #fitted_curve1_exp_best = exponential(np.arange(len(fitted_curve_best)), *params_exp)
 
-              
-
+                        
+            
             except Exception as e:
                 print(f"Erro durante o ajuste do modelo {model_name} na tentativa {attempt}: {e}")
                 continue
 
-        if found_good_fit:
-            output_filename = f"{model_name}_final_plot.png"
-            plot_and_save_model(model_name, best_params, RoiGreen1, fitted_curve_best, fitted_curve1_exp_best, RoiGreen2, best_r2, output_filename)
+        #if found_good_fit:
+       
 
-    if best_model is None:
-        print("Nenhum ajuste adequado foi encontrado.")
-        return None, None, None, None, None, None
 
-    return best_model, best_r2, best_params, best_fitted_curve1, fitted_curve1_exp, best_r2
+    return model_name, best_params, RoiDecayGreen1, fitted_curve1, fitted_curve1_exp, RoiDecayGreen2, r_squared_exp
 
 
 
 # Chama a função de melhor ajuste
-bestfit_models(RoiGreen, normalized_curve2,models)
+model_name, best_params, RoiDecayGreen1, fitted_curve1, fitted_curve1_exp, RoiDecayGreen2, best_r2 = bestfit_models(RoiGreen, normalized_curve2,models)
+
 #print(f"RoiGreen length: {len(RoiGreen)}")
 #print(f"normalized_curve2 length: {len(normalized_curve2)}")
 
+
+
+output_filename = f"{model_name}_final_plot.png"
+plot_and_save_model(model_name, best_params, RoiDecayGreen1, fitted_curve1, fitted_curve1_exp, RoiDecayGreen2, best_r2, output_filename)
+  
+
+
+""" testando o pCRT 
+
+
+RoiRed2=np.array(normalized_curve2)
+RoiGreen2=np.array(normalized_curve2)
+RoiBlue2= np.array(normalized_curve2)
+
+
+
+channelsAvgIntensArr= np.column_stack((RoiRed2, RoiGreen2, RoiBlue2))
+pcrt = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
+#pcrt.showAvgIntensPlot()
+pcrt.showPCRTPlot()
+
+"""
 
