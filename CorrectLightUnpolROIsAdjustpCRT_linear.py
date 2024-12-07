@@ -72,36 +72,38 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b,best_gamma, a
     axs[1, 0].axis('off')
     axs[2, 0].axis('off')
 
-    axs[0, 1].plot(time_stamps, all_green_rois[i], label=f"Canal Verde ROI{i+1} ", color='blue')
+    axs[0, 1].plot(time_stamps, all_green_rois[i], label=f"Canal Verde ROI {i+1} ", color='blue')
     axs[0, 1].set_xlabel('Tempo (s)')
     axs[0, 1].set_ylabel('Intensidade do Canal Verde')
     axs[0, 1].legend()
 
-    axs[1, 1].plot(time_stamps, all_green_rois[j], label=f"Canal Verde ROI{j+1} ", color='red')
+    axs[1, 1].plot(time_stamps, all_green_rois[j], label=f"Canal Verde ROI {j+1} ", color='red')
     axs[1, 1].set_xlabel('Tempo (s)')
     axs[1, 1].set_ylabel('Intensidade do Canal Verde')
     axs[1, 1].legend()
 
-    axs[2, 1].plot(time_stamps, original_ratio, label=f"Razão Original ROI{i+1} / ROI{j+1}", color='orange')
+    axs[2, 1].plot(time_stamps, original_ratio, label=f"Razão ROI {i+1} / ROI {j+1}", color='orange')
     axs[2, 1].set_xlabel('Tempo (s)')
     axs[2, 1].set_ylabel('Razão Original')
     axs[2, 1].legend()
 
-    axs[0, 2].plot(time_stamps, RoiGreen, label=f"Canal Verde ", color='blue')
+    axs[0, 2].plot(time_stamps, RoiGreen, label=f"Canal Verde ROI 1 ", color='darkgreen')
     axs[0, 2].set_xlabel('Tempo (s)')
     axs[0, 2].set_ylabel('Intensidade do Canal Verde')
     axs[0, 2].legend()
 
-    axs[1, 2].plot(time_stamps, z, label=f"Canal Verde corrigido", color='blue')
-    axs[1, 2].set_title(f"\gamma={best_gamma}")
+    axs[1, 2].plot(time_stamps, z, label=f"Canal Verde corrigido", color='green')
+    axs[1, 2].set_title(r"$\gamma=$" + f"{best_gamma:.2f}")
     axs[1, 2].set_xlabel('Tempo (s)')
     axs[1, 2].set_ylabel('Intensidade do Canal Verde')
     axs[1, 2].legend()
 
 
-
     plt.tight_layout()
+    output_filename = f"a={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}.png"
+    plt.savefig(output_filename,  dpi=600)
     plt.show()
+    plt.close()
 
 
 # Função para criar ROIs fixas dinamicamente
@@ -131,10 +133,10 @@ def find_best_a_b(green_roi2,green_roi3):
     best_error = float('inf')  # Inicializa o erro com um valor muito grande
 
     # Defina os valores possíveis de a e b
-    #a_values = np.arange(0.1, 10.01, 0.1)
+    a_values = np.arange(0.1, 10.01, 0.1)
     #b_values = np.arange(0.1, 10.01, 0.1)
 
-    a_values = np.array([0])
+    #a_values = np.array([0])
     b_values = np.array([1])
     gamma_values = np.arange(0.5, 3, 0.1)
 
@@ -389,7 +391,8 @@ ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
 pcrt = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
 #pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
-pcrt.savePCRTPlot(f"pCRT-Corrigido.png")
+outputFilePCRT = f"a={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}pCRT.png"
+pcrt.savePCRTPlot(outputFilePCRT)
 
 
 
