@@ -32,7 +32,7 @@ from src.pyCRT import PCRT
 base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5" #PC casa
 
 folder_name = "teste1"
-video_name="corrected_v7_gamma=1.53.mp4"
+video_name="v7.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 roi_width = 80 
 roi_height = 80
@@ -40,8 +40,8 @@ num_rois = 200  # Número de ROIs a serem criadas
 #gamma = 1.53
 
 # Função de plotagem com a razão ajustada
-def plot_image_and_ratios(frames, best_combination, best_a, best_b,best_gamma, all_green_rois, time_stamps,RoiGreen,z):
-    
+def plot_image_and_ratios(frames, best_combination, best_a, best_b,best_gamma, all_green_rois, time_stamps,RoiGreen,ROI1Corrigida,adjusted_ratio,folder_name):
+ 
     if best_combination is None:
         print("Nenhuma combinação de ROIs encontrada.")
         return
@@ -92,15 +92,20 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b,best_gamma, a
     axs[0, 2].set_ylabel('Intensidade do Canal Verde')
     axs[0, 2].legend()
 
-    axs[1, 2].plot(time_stamps, z, label=f"Canal Verde corrigido", color='green')
+    axs[1, 2].plot(time_stamps, ROI1Corrigida, label=f"Canal Verde corrigido", color='green')
     axs[1, 2].set_title(r"$\gamma=$" + f"{best_gamma:.2f}")
     axs[1, 2].set_xlabel('Tempo (s)')
     axs[1, 2].set_ylabel('Intensidade do Canal Verde')
     axs[1, 2].legend()
 
+    axs[2, 2].plot(time_stamps, adjusted_ratio, label=f"Razão ROI {i+1} / ROI {j+1} corrigido", color='orange')
+    axs[2, 2].set_xlabel('Tempo (s)')
+    axs[2, 2].set_ylabel('Intensidade do Canal Verde')
+    axs[2, 2].legend()
+
 
     plt.tight_layout()
-    output_filename = f"a={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}.png"
+    output_filename = f"a={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}.png"
     plt.savefig(output_filename,  dpi=600)
     plt.show()
     plt.close()
@@ -127,55 +132,239 @@ def calculate_ratios(all_green_rois, num_rois):
     return ratios
 
 
+# Função para calcular razões e variação
+def calculate_ratios_and_variations(all_green_rois, num_rois):
+    roi_combinations = list(combinations(range(num_rois), 2))
+    ratios = {}
+    variations = {}
+    
+    for i, j in roi_combinations:
+        if len(all_green_rois[i]) == len(all_green_rois[j]) > 0:
+            ratio = all_green_rois[i] / all_green_rois[j]
+            ratios[f"ROI{i+1}/ROI{j+1}"] = ratio
+            variations[f"ROI{i+1}/ROI{j+1}"] = np.std(ratio)  # Calcula o desvio padrão como medida de variação
+    
+    return ratios, variations
 
-def find_best_a_b(green_roi2,green_roi3):
-    best_a, best_b = None, None
-    best_error = float('inf')  # Inicializa o erro com um valor muito grande
 
-    # Defina os valores possíveis de a e b
+
+
+"""
+def find_best_a_b(green_roi2, green_roi3):
+    best_a, best_b, best_gamma = None, None, None  # Inicializa com valores padrão
+    best_error = float('inf')  # Inicializa com erro infinito
+
+    # Define os valores possíveis de a, b e gamma
     a_values = np.arange(0.1, 10.01, 0.1)
-    #b_values = np.arange(0.1, 10.01, 0.1)
-
-    #a_values = np.array([0])
-    b_values = np.array([1])
+    b_values = np.array([1])  # Ajustado para uma única variável fixa
     gamma_values = np.arange(0.5, 3, 0.1)
 
-    # Iteração sobre todas as combinações possíveis de a e b
+    # Iteração sobre todas as combinações possíveis de a, b e gamma
     for a in a_values:
         for b in b_values:
             for gamma in gamma_values:
-                # Ajusta a razão com o valor atual de a e b
-                adjusted_ratio = ( a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
+                # Ajusta a razão com os valores atuais de a, b e gamma
+                adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
                 # Calcula o erro (diferença média absoluta entre a razão ajustada e 1)
                 error = calculate_error(adjusted_ratio)
-                
-                # Se o erro for menor que o erro anterior, armazena a nova combinação de a, b 
-                if error < 0.01:
-                    best_error = error
+                print(error)
+
+                # Se o erro for menor que o melhor erro anterior, atualiza os valores
+                if error < best_error:
+                    print(error)
                     best_a, best_b, best_gamma = a, b, gamma
 
-    return best_a, best_b,best_gamma
-
-
-
-
-def calculate_error(adjusted_ratio, weight_std=1.0, weight_mean=1.0):
-    """
-    Calcula o erro combinando a média absoluta dos desvios em relação a 1 
-    e o desvio padrão da curva adjusted_ratio.
+    # Verifica se nenhuma solução foi encontrada
+    if best_a is None or best_b is None or best_gamma is None:
+        raise ValueError("Não foi possível encontrar uma combinação de a, b e gamma que satisfaça os critérios.")
     
-    Args:
-    - adjusted_ratio: np.ndarray, curva ajustada.
-    - weight_std: float, peso do desvio padrão no cálculo do erro.
-    - weight_mean: float, peso da média absoluta no cálculo do erro.
-    
-    Returns:
-    - erro combinado como um valor escalar.
+    final_adjusted_ratio = (best_a + best_b * (green_roi2**best_gamma)) / (best_a + best_b * (green_roi3**best_gamma))
+    plt.plot(final_adjusted_ratio)
+    plt.show()
+    return best_a, best_b, best_gamma,final_adjusted_ratio
+"""
+
+
+def calculate_error_for_minimization(params, green_roi2, green_roi3):
     """
-    mean_error = np.mean(np.abs(adjusted_ratio - 1)) 
-    std_error = np.std(adjusted_ratio)               
-    combined_error = weight_mean * mean_error + weight_std * std_error
+    Calcula apenas o erro combinado para ser usado na minimização.
+    """
+    a, b, gamma = params
+    adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
+    mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
+    std_error = np.std(adjusted_ratio)
+    combined_error = mean_abs_error + std_error
     return combined_error
+
+
+"""
+def find_best_a_b(green_roi2, green_roi3, error_threshold=0.1):
+   
+    #Encontra os melhores parâmetros a, b e gamma que minimizam o erro.
+
+    # Valores iniciais para a otimização
+    initial_params = [1.0, 1.0, 1.0]  # Inicialização de a, b, gamma
+
+    # Restrições nos parâmetros (a, b, gamma devem ser positivos)
+    constraints = [
+        {'type': 'ineq', 'fun': lambda x: x[0]},  # a >= 0
+        {'type': 'ineq', 'fun': lambda x: x[1]},  # b >= 0
+        {'type': 'ineq', 'fun': lambda x: x[2]}   # gamma >= 0
+    ]
+
+    # Executa a otimização
+    result = minimize(
+        calculate_error_for_minimization,
+        initial_params,
+        args=(green_roi2, green_roi3),
+        constraints=constraints,
+        method='SLSQP',
+        options={'disp': True}
+    )
+
+    if result.success:
+        best_params = result.x
+        a, b, gamma = best_params
+
+        # Calcula a razão ajustada e os erros finais
+        adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
+        mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
+        std_error = np.std(adjusted_ratio)
+        final_error = mean_abs_error + std_error
+
+        if final_error <= error_threshold:
+            print(f"Parâmetros ótimos encontrados: a={a}, b={b}, gamma={gamma}")
+            print(f"Erro final: {final_error}")
+            print(f"Erro médio: {mean_abs_error}, Desvio padrão: {std_error}")
+
+            # Plota a razão ajustada
+            plt.plot(adjusted_ratio, label='Razão Ajustada')
+            plt.axhline(y=1, color='r', linestyle='--', label='Ideal (1)')
+            plt.legend()
+            plt.title("Razão Ajustada")
+            plt.show()
+
+            return a, b, gamma, adjusted_ratio
+        else:
+            raise ValueError("Erro final não satisfaz o limite definido.")
+    else:
+        raise ValueError("A otimização falhou.")
+
+"""
+
+
+import numpy as np
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
+
+
+def calculate_error_for_minimization(params, green_roi2, green_roi3):
+    """
+    Função de erro usada pela otimização.
+    """
+    a, b, gamma = params
+    adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
+    mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
+    std_error = np.std(adjusted_ratio)
+    return mean_abs_error + std_error
+
+
+def find_best_a_b(green_roi2, green_roi3, error_threshold=0.1):
+    """
+    Encontra os melhores parâmetros a, b e gamma que minimizam o erro.
+    """
+    # Intervalos definidos para os valores iniciais
+    a_values = np.array([0])
+    b_values = np.array([1])  # b fixo
+    gamma_values = np.arange(0.5, 3, 0.1)
+
+    # Inicializa os melhores parâmetros encontrados no grid search
+    best_params = None
+    best_error = float('inf')
+
+    # Realiza o grid search para definir os parâmetros iniciais
+    for a in a_values:
+        for b in b_values:
+            for gamma in gamma_values:
+                adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
+                mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
+                std_error = np.std(adjusted_ratio)
+                combined_error = mean_abs_error + std_error
+
+                if combined_error < best_error:
+                    best_error = combined_error
+                    best_params = [a, b, gamma]
+
+    print(f"Melhor inicialização no grid search: a={best_params[0]}, b={best_params[1]}, gamma={best_params[2]}")
+    print(f"Erro combinado no grid search: {best_error:.4f}")
+
+    # Otimização refinada usando os melhores parâmetros do grid search
+    constraints = [
+        {'type': 'ineq', 'fun': lambda x: x[0]},  # a >= 0
+        {'type': 'ineq', 'fun': lambda x: x[1]},  # b >= 0
+        {'type': 'ineq', 'fun': lambda x: x[2]-0.1}   # gamma >= 0
+    ]
+
+    result = minimize(
+        calculate_error_for_minimization,
+        best_params,  # Usa os melhores valores do grid search como inicialização
+        args=(green_roi2, green_roi3),
+        constraints=constraints,
+        method='SLSQP',
+        options={'disp': True}
+    )
+
+    if result.success:
+        a, b, gamma = result.x
+
+        # Calcula a razão ajustada e os erros finais
+        adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
+        mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
+        std_error = np.std(adjusted_ratio)
+        final_error = mean_abs_error + std_error
+
+        if final_error <= error_threshold:
+            print(f"Parâmetros ótimos encontrados: a={a:.4f}, b={b:.4f}, gamma={gamma:.4f}")
+            print(f"Erro final combinado: {final_error:.4f}")
+            print(f"Erro médio: {mean_abs_error:.4f}, Desvio padrão: {std_error:.4f}")
+
+            # Plota a razão ajustada
+            plt.plot(adjusted_ratio, label='Razão Ajustada')
+            plt.axhline(y=1, color='r', linestyle='--', label='Ideal (1)')
+            plt.legend()
+            plt.title("Razão Ajustada")
+            plt.show()
+
+            return a, b, gamma, adjusted_ratio
+        else:
+            raise ValueError("Erro final não satisfaz o limite definido.")
+    else:
+        raise ValueError("A otimização falhou.")
+
+
+
+
+
+"""
+def calculate_error(adjusted_ratio, weight_std=1.0, weight_mean=1.0):
+    
+        Calcula o erro combinando a média absoluta dos desvios em relação a 1 
+        e o desvio padrão da curva adjusted_ratio.
+        
+        Args:
+        - adjusted_ratio: np.ndarray, curva ajustada.
+        - weight_std: float, peso do desvio padrão no cálculo do erro.
+        - weight_mean: float, peso da média absoluta no cálculo do erro.
+        
+        Returns:
+        - erro combinado como um valor escalar.
+    
+    mean_error = np.mean(np.abs(adjusted_ratio - 1)) 
+    #std_error = np.std(adjusted_ratio)               
+    #combined_error =  mean_error + std_error
+    return mean_error
+
+"""
 
 
 
@@ -221,8 +410,16 @@ cap.release()
 
 time_stamps = np.array(time_stamps)
 all_green_rois = [np.array(roi) for roi in all_green_rois]
-ratios = calculate_ratios(all_green_rois, num_rois)
 
+# usado para encontrar ROIs proximas 
+#ratios = calculate_ratios(all_green_rois, num_rois)
+
+# usado para encontrar ROIs longe
+ratios, variations = calculate_ratios_and_variations(all_green_rois, num_rois)
+sorted_variations = sorted(variations.items(), key=lambda x: x[1], reverse=True)
+
+""" 
+# usado para encontrar ROIs proximas 
 # Definir thresholds para mediana e desvio padrão
 threshold_median = 0.005  
 threshold_std = 0.01      
@@ -234,6 +431,8 @@ close_to_one_ratios = {
 }
 
 
+
+"""
 
 
 # Verifica o caminho do vídeo
@@ -301,9 +500,7 @@ while True:
 cap.release()
 
 
-
-
-
+"""
 # Encontrar a melhor combinação de ROIs e ajustar a e b
 best_a, best_b,best_gamma = None, None, None
 best_combination = None
@@ -317,7 +514,7 @@ for roi_pair in close_to_one_ratios.keys():
     #print(np.mean(roi_values[:40]))
 
 
-    a, b, gamma = find_best_a_b(all_green_rois[i] ,all_green_rois[j])
+    a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
 
     if a is not None and b is not None:
         if best_a is None or best_b is None or (a and b):  
@@ -329,6 +526,38 @@ if best_a is not None and best_b is not None:
     print(f"Melhor a: {best_a}, Melhor b: {best_b}, Melhor gamma: {best_gamma}, ROI utilizada: {best_combination}")
 else:
     print("Não foi possível encontrar valores válidos de a, b e gamma.")
+"""
+
+
+
+
+# Encontrar a melhor combinação de ROIs e ajustar a e b
+best_a, best_b,best_gamma = None, None, None
+best_combination_key = None
+
+if sorted_variations:
+    best_combination_key = sorted_variations[0][0]
+    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, best_combination_key.split('/'))
+
+    #roi_values = all_green_rois[i]  
+    #green_roi2=roi_values/np.mean(roi_values[:40]) # corrige pelo inicio da curva 
+    #print(np.mean(roi_values[:40]))
+
+
+    a, b, gamma,final_adjusted_ratio = find_best_a_b(all_green_rois[i] ,all_green_rois[j])
+
+    if a is not None and b is not None:
+        if best_a is None or best_b is None or (a and b):  
+            best_a, best_b, best_gamma = a, b, gamma
+            best_combination = (i, j) 
+
+
+if best_a is not None and best_b is not None:
+    print(f"Melhor a: {best_a}, Melhor b: {best_b}, Melhor gamma: {best_gamma}, ROI utilizada: {best_combination}")
+else:
+    print("Não foi possível encontrar valores válidos de a, b e gamma.")
+
+
 
 
 
@@ -354,7 +583,7 @@ ratiosr = ROI1Corrigida
 ratiosg = ROI1Corrigida
 ratiosb = ROI1Corrigida
 
-plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma,all_green_rois, time_stamps,RoiGreen,ROI1Corrigida)
+plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma,all_green_rois, time_stamps,RoiGreen,ROI1Corrigida,final_adjusted_ratio,folder_name)
 
 
 """
@@ -384,14 +613,14 @@ channelsAvgIntensArr= np.column_stack((RoiRed, RoiGreen, RoiBlue))
 pcrt = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
 #pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
-pcrt.savePCRTPlot(f"pCRT-Original.png")
+pcrt.savePCRTPlot(f"pCRTOriginal{folder_name}.png")
 
 
 ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
 pcrt = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
 #pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
-outputFilePCRT = f"a={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}pCRT.png"
+outputFilePCRT = f"pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}.png"
 pcrt.savePCRTPlot(outputFilePCRT)
 
 
