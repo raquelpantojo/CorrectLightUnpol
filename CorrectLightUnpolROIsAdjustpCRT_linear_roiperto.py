@@ -1,5 +1,15 @@
-# Teste 2- 07-12-2024
-
+# Teste 2- 03-12-2024
+# 
+#Obter duas ROIs (ROI2 e ROI3) fora da região de interesse
+#Crio 200 ROIs dentro da imagem com 60x60 px
+#Faz diferentes combinações 2 a 2 
+#Encontra o conjunto de combinações que possua a razão mais próxima de 1
+#Seleciona a ROI 2 (Roi que não teve alteração pela penumbra)
+#Normaliza esse ROI pelo valor médio dos primeiros 40 frames do vídeo
+#Divide a ROI1/ ROI2
+#Encontra os valores de a e b (0,1 – 100 passos de 0,1) ajustando a equação forçando a ter valores igual a 1: 
+#𝑎+𝑏∗𝐼(𝑅𝑂𝐼_2 )^𝛾
+#Ajusta a curva da ROI1 : 𝑎+𝑏∗𝐼(𝑅𝑂𝐼_1 )^𝛾
 
 
 import cv2 as cv
@@ -11,6 +21,7 @@ from itertools import combinations
 from scipy.optimize import minimize
 
 
+
 sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
 #sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
 
@@ -19,10 +30,10 @@ from src.pyCRT import PCRT
 
 # Caminho base para os arquivos do projeto
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
-#base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5" #PC casa
-base_path="C:/Users/Fotobio/Desktop/Estudo_ElasticidadePele"
-folder_name = "DespolarizadoP3"
-video_name="v6.mp4"
+base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5" #PC casa
+
+folder_name = "teste1"
+video_name="v7.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 roi_width = 80 
 roi_height = 80
@@ -30,23 +41,8 @@ num_rois = 200  # Número de ROIs a serem criadas
 #gamma = 1.53
 
 # Função de plotagem com a razão ajustada
-def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, all_green_rois, time_stamps, 
-                          RoiGreen, ROI1Corrigida, adjusted_ratio, folder_name, roi1):
-    """
-    Função para plotar a imagem original, os canais verdes e as razões ajustadas/corrigidas.
-    
-    Args:
-        frames: Lista de frames de vídeo.
-        best_combination: Melhor combinação de ROIs (índices i e j).
-        best_a, best_b, best_gamma: Parâmetros do ajuste.
-        all_green_rois: Lista de intensidades do canal verde para todas as ROIs.
-        time_stamps: Lista de timestamps para os frames.
-        RoiGreen: Intensidades do canal verde da ROI1.
-        ROI1Corrigida: Canal verde corrigido para ROI1.
-        adjusted_ratio: Razão ajustada entre as ROIs selecionadas.
-        folder_name: Nome da pasta para salvar o arquivo de saída.
-        roi1: Coordenadas da ROI1 no formato (x, y, largura, altura).
-    """
+def plot_image_and_ratios(frames, best_combination, best_a, best_b,best_gamma, all_green_rois, time_stamps,RoiGreen,ROI1Corrigida,adjusted_ratio,folder_name):
+ 
     if best_combination is None:
         print("Nenhuma combinação de ROIs encontrada.")
         return
@@ -55,8 +51,6 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, 
     ratio_key = f"ROI{i+1}/ROI{j+1}"
     original_ratio = ratios[ratio_key]
      
-    # Extrair coordenadas da ROI1
-    x_roi1, y_roi1, w_roi1, h_roi1 = roi1
 
     fig, axs = plt.subplots(3, 3, figsize=(18, 12))
     
@@ -64,20 +58,18 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, 
     axs[0, 0].set_title('Imagem Original')
     axs[0, 0].axis('off')  
     
-    # Criar ROIs dinâmicas
     rois = create_dynamic_rois(frames[0], num_rois, roi_width, roi_height)
     x_i, y_i, w_i, h_i = rois[i]
     x_j, y_j, w_j, h_j = rois[j]
    
-    # Adicionar retângulos das ROIs na imagem
-    axs[0, 0].add_patch(plt.Rectangle((x_roi1, y_roi1), w_roi1, h_roi1, edgecolor='green', facecolor="none", linewidth=2))
+    axs[0, 0].add_patch(plt.Rectangle((553, 113), 91, 88, edgecolor='green',facecolor="none", linewidth=2))
     axs[0, 0].add_patch(plt.Rectangle((x_i, y_i), w_i, h_i, edgecolor='blue', facecolor='none', linewidth=2))
     axs[0, 0].add_patch(plt.Rectangle((x_j, y_j), w_j, h_j, edgecolor='red', facecolor='none', linewidth=2))
-    axs[0, 0].text(x_roi1 + w_roi1 / 2, y_roi1 + h_roi1 / 2, "ROI1", color='green', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0, 0].text(553 + 91 / 2, 113 + 88 / 2,"ROI1", color='green', ha='center', va='center', fontsize=8, weight='bold')
     axs[0, 0].text(x_i + w_i / 2, y_i + h_i / 2, f"{i+1}", color='blue', ha='center', va='center', fontsize=8, weight='bold')
     axs[0, 0].text(x_j + w_j / 2, y_j + h_j / 2, f"{j+1}", color='red', ha='center', va='center', fontsize=8, weight='bold')
     
-    # Remover subplots em branco da primeira coluna
+    #Remover subplots em branco da primeira coluna
     axs[1, 0].axis('off')
     axs[2, 0].axis('off')
 
@@ -112,11 +104,13 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, 
     axs[2, 2].set_ylabel('Intensidade do Canal Verde')
     axs[2, 2].legend()
 
+
     plt.tight_layout()
-    output_filename = f"longe_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}.png"
-    plt.savefig(output_filename, dpi=600)
+    output_filename = f"a={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}.png"
+    plt.savefig(output_filename,  dpi=600)
     plt.show()
     plt.close()
+
 
 # Função para criar ROIs fixas dinamicamente
 def create_dynamic_rois(frame, num_rois, roi_width, roi_height):
@@ -139,46 +133,8 @@ def calculate_ratios(all_green_rois, num_rois):
     return ratios
 
 
-
-
-
-
+# Função para calcular razões e variação
 def calculate_ratios_and_variations(all_green_rois, num_rois):
-    """
-    Calcula as razões entre as ROIs e encontra a combinação de ROIs cuja razão 
-    é a mais próxima possível de 1.
-
-    Args:
-        all_green_rois (list of np.ndarray): Intensidade do canal verde para cada ROI ao longo do tempo.
-        num_rois (int): Número total de ROIs.
-
-    Returns:
-        dict: Razões entre todas as combinações de ROIs.
-        dict: Variações (desvio padrão) das razões.
-        tuple: Melhor combinação de ROIs (i, j) com a razão mais próxima de 1.
-        float: Erro médio absoluto para a melhor combinação.
-    """
-    roi_combinations = list(combinations(range(num_rois), 2))
-    ratios = {}
-    variations = {}
-    best_combination = None
-    best_error = float('inf')
-
-    for i, j in roi_combinations:
-        if len(all_green_rois[i]) == len(all_green_rois[j]) > 0:
-            ratio = all_green_rois[i] / all_green_rois[j]
-            ratios[f"ROI{i+1}/ROI{j+1}"] = ratio
-            variations[f"ROI{i+1}/ROI{j+1}"] = np.std(ratio)
-
-            # Calcula o erro médio absoluto em relação a 1
-            mean_abs_error = np.mean(np.abs(ratio - 1))
-            if mean_abs_error < best_error:
-                best_error = mean_abs_error
-                best_combination = (i, j)
-
-    return ratios, variations,best_combination
-
-def calculate_ratios_and_maxvariations(all_green_rois, num_rois):
     roi_combinations = list(combinations(range(num_rois), 2))
     ratios = {}
     variations = {}
@@ -196,16 +152,13 @@ def calculate_ratios_and_maxvariations(all_green_rois, num_rois):
 
 def calculate_error_for_minimization(params, green_roi2, green_roi3):
     """
-    Calcula apenas o erro combinado para ser usado na minimização.
+    Função de erro usada pela otimização.
     """
     a, b, gamma = params
     adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
     mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
-    #std_error = np.std(adjusted_ratio)
-    #combined_error = mean_abs_error + std_error
-    return mean_abs_error
-
-
+    std_error = np.std(adjusted_ratio)
+    return mean_abs_error + std_error
 
 
 def find_best_a_b(green_roi2, green_roi3, error_threshold=0.1):
@@ -245,12 +198,9 @@ def find_best_a_b(green_roi2, green_roi3, error_threshold=0.1):
     ]
 
     result = minimize(
-        calculate_error_for_minimization,
-        best_params,  # Usa os melhores valores do grid search como inicialização
-        args=(green_roi2, green_roi3),
-        constraints=constraints,
-        method='SLSQP',
-        options={'disp': True}
+        adjusted_ratio,
+        best_params,  
+        method='SLSQP'
     )
 
     if result.success:
@@ -329,10 +279,20 @@ time_stamps = np.array(time_stamps)
 all_green_rois = [np.array(roi) for roi in all_green_rois]
 
 # usado para encontrar ROIs proximas 
-#ratios = calculate_ratios(all_green_rois, num_rois)
+ratios = calculate_ratios(all_green_rois, num_rois)
 
-# usado para encontrar ROIs longe
-ratios, variations,best_combination_key = calculate_ratios_and_maxvariations(all_green_rois, num_rois)
+
+
+# usado para encontrar ROIs proximas 
+# Definir thresholds para mediana e desvio padrão
+threshold_median = 0.005  
+threshold_std = 0.01      
+
+# Filtra razões mais próximas de 1 com base na mediana e na consistência (desvio padrão)
+close_to_one_ratios = {
+    key: value for key, value in ratios.items()
+    if abs(np.median(value) - 1) < threshold_median and np.std(value) < threshold_std
+}
 
 
 
@@ -374,8 +334,7 @@ def select_rois():
 
 # Selecionar as ROIs
 #select_rois()
-#roi1=(553, 113, 91, 88) #v7
-roi1=(41, 287, 106, 83) #v6
+roi1=(553, 113, 91, 88)
 # Reinicia o vídeo
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
@@ -403,23 +362,27 @@ cap.release()
 
 
 
-# Inicializar os melhores valores
-best_a, best_b, best_gamma = None, None, None
+# Encontrar a melhor combinação de ROIs e ajustar a e b
+best_a, best_b,best_gamma = None, None, None
 best_combination = None
 
-# Extrair os índices da melhor combinação
-i, j = best_combination_key
+for roi_pair in close_to_one_ratios.keys():
+    # Extrai os índices das ROIs da chave
+    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
 
-# Encontrar os melhores parâmetros a, b e gamma
-a, b, gamma, final_adjusted_ratio = find_best_a_b(all_green_rois[i], all_green_rois[j])
+    roi_values = all_green_rois[i]  
+    #green_roi2=roi_values/np.mean(roi_values[:40]) # corrige pelo inicio da curva 
+    #print(np.mean(roi_values[:40]))
 
-# Atualizar os melhores valores encontrados
-if a is not None and b is not None:
-    if best_a is None or best_b is None or (a and b):
-        best_a, best_b, best_gamma = a, b, gamma
-        best_combination = (i, j)
 
-# Exibir o resultado final
+    a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
+
+    if a is not None and b is not None:
+        if best_a is None or best_b is None or (a and b):  
+            best_a, best_b, best_gamma = a, b, gamma
+            best_combination = (i, j) 
+
+
 if best_a is not None and best_b is not None:
     print(f"Melhor a: {best_a}, Melhor b: {best_b}, Melhor gamma: {best_gamma}, ROI utilizada: {best_combination}")
 else:
@@ -440,8 +403,8 @@ RoiRed = np.array(RoiRed)
 RoiGreen = np.array(RoiGreen)
 RoiBlue = np.array(RoiBlue)
 
-#ROI1Corrigida = best_a + (best_b*(RoiGreen))**best_gamma
-ROI1Corrigida = (RoiGreen)**best_gamma
+ROI1Corrigida= (RoiGreen)**best_gamma
+
 time_stamps = np.array(time_stamps)
 
 # Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro -
@@ -450,10 +413,7 @@ ratiosr = ROI1Corrigida
 ratiosg = ROI1Corrigida
 ratiosb = ROI1Corrigida
 
-plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma,all_green_rois, time_stamps,RoiGreen,ROI1Corrigida,final_adjusted_ratio,folder_name,roi1)
-
-
-
+plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma,all_green_rois, time_stamps,RoiGreen,ROI1Corrigida,adjusted_ratio,folder_name)
 
 
 
@@ -461,14 +421,14 @@ channelsAvgIntensArr= np.column_stack((RoiRed, RoiGreen, RoiBlue))
 pcrt = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
 #pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
-pcrt.savePCRTPlot(f"longepCRTOriginal{folder_name}.png")
+pcrt.savePCRTPlot(f"pCRTOriginal{folder_name}.png")
 
 
 ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
 pcrt = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
 #pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
-outputFilePCRT = f"longe_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}.png"
+outputFilePCRT = f"pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}.png"
 pcrt.savePCRTPlot(outputFilePCRT)
 
 
