@@ -154,30 +154,6 @@ def calculate_ratios_and_variations(all_green_rois, num_rois):
 
 
 
-def calculate_error_for_minimization(params, green_roi2, green_roi3):
-    """
-    Calcula apenas o erro combinado para ser usado na minimização.
-    """
-    a, b, gamma = params
-    adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
-    mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
-    std_error = np.std(adjusted_ratio)
-    combined_error = mean_abs_error + std_error
-    return combined_error
-
-
-
-
-def calculate_error_for_minimization(params, green_roi2, green_roi3):
-    """
-    Função de erro usada pela otimização.
-    """
-    a, b, gamma = params
-    adjusted_ratio = (a + b * (green_roi2**gamma)) / (a + b * (green_roi3**gamma))
-    mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
-    std_error = np.std(adjusted_ratio)
-    return mean_abs_error + std_error
-
 
 def find_best_a_b(green_roi2, green_roi3, error_threshold=0.1):
     """
@@ -229,26 +205,6 @@ def find_best_a_b(green_roi2, green_roi3, error_threshold=0.1):
 
 
 
-"""
-def calculate_error(adjusted_ratio, weight_std=1.0, weight_mean=1.0):
-    
-        Calcula o erro combinando a média absoluta dos desvios em relação a 1 
-        e o desvio padrão da curva adjusted_ratio.
-        
-        Args:
-        - adjusted_ratio: np.ndarray, curva ajustada.
-        - weight_std: float, peso do desvio padrão no cálculo do erro.
-        - weight_mean: float, peso da média absoluta no cálculo do erro.
-        
-        Returns:
-        - erro combinado como um valor escalar.
-    
-    mean_error = np.mean(np.abs(adjusted_ratio - 1)) 
-    #std_error = np.std(adjusted_ratio)               
-    #combined_error =  mean_error + std_error
-    return mean_error
-
-"""
 
 
 

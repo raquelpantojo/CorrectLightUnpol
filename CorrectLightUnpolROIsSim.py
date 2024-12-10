@@ -1,4 +1,5 @@
-# teste usando ROIS longe 
+# Teste usando ROIS silimares
+# A razão entre as curvas das duas regiões deve ser menor que 1.
 
 import cv2 as cv
 import numpy as np
@@ -7,7 +8,7 @@ import sys
 import matplotlib.pyplot as plt
 from itertools import combinations
 from scipy.optimize import minimize
-
+import pandas as pd
 
 sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
 #sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
@@ -126,19 +127,9 @@ def create_dynamic_rois(frame, num_rois, roi_width, roi_height):
             rois.append((x, y, roi_width, roi_height))
     return rois
 
-# Função para calcular as razões com validação
 
-"""
 
-def calculate_ratios(all_green_rois, num_rois):
-    roi_combinations = list(combinations(range(num_rois), 2))
-    ratios = {}
-    for i, j in roi_combinations:
-        if len(all_green_rois[i]) == len(all_green_rois[j]) > 0:
-            ratios[f"ROI{i+1}/ROI{j+1}"] = all_green_rois[i] / all_green_rois[j]
-    return ratios
-"""
-# Função para calcular as razões com validação
+# Função para calcular as razões 
 def calculate_ratios(all_green_rois, num_rois,tolerance=0.01):
     roi_combinations = list(combinations(range(num_rois), 2))
     ratios = {}
@@ -154,7 +145,7 @@ def calculate_ratios(all_green_rois, num_rois,tolerance=0.01):
     return matching_ratios
 
 
-def find_best_a_b(green_roi2, green_roi3):
+def find_best_a_b(green_roi2, green_roi3,bounds):
     """
     Encontra os melhores parâmetros a, b e gamma que minimizam o erro absoluto médio
     e satisfazem as restrições de erro padrão e erro absoluto médio.
@@ -195,7 +186,7 @@ def find_best_a_b(green_roi2, green_roi3):
     x0 = [1, 1, 1]  # valores iniciais para a, b, gamma
 
     # Definir limites (exemplo: a e b podem ser negativos, gamma > 0)
-    bounds = [(0, None), (0, None), (0.1, 3)]  # a e b sem limites, gamma > 0
+    #bounds = [(0, None), (0, None), (0.1, 3)]  # a e b sem limites, gamma > 0
 
     # Definir as restrições
     restricoes = [
@@ -218,7 +209,7 @@ def find_best_a_b(green_roi2, green_roi3):
 
 
 
-def find_best_gamma(green_roi2, green_roi3):
+def find_best_gamma(green_roi2, green_roi3,bounds):
     
     #Encontra o melhor parâmetro gamma, fixando a = 0 e b = 1.
     
@@ -349,21 +340,6 @@ all_green_rois = [np.array(roi) for roi in all_green_rois]
 
 
 
-# usado para encontrar ROIs perto
-ratios = calculate_ratios(all_green_rois, num_rois)
-
-
-# usado para encontrar ROIs proximas 
-# Definir thresholds para mediana e desvio padrão
-threshold_median = 0.005  
-threshold_std = 0.01      
-
-# Filtra razões mais próximas de 1 com base na mediana e na consistência (desvio padrão)
-close_to_one_ratios = {
-    key: value for key, value in ratios.items()
-    if abs(np.median(value) - 1) < threshold_median and np.std(value) < threshold_std
-}
-
 
 
 
@@ -414,70 +390,123 @@ while True:
 
 cap.release()
 
+# usado para encontrar ROIs perto
+ratios = calculate_ratios(all_green_rois, num_rois)
+
+
+# usado para encontrar ROIs proximas 
+# Definir thresholds para mediana e desvio padrão
+threshold_median = 0.005  
+threshold_std = 0.01      
+
+# Filtra razões mais próximas de 1 com base na mediana e na consistência (desvio padrão)
+close_to_one_ratios = {
+    key: value for key, value in ratios.items()
+    if abs(np.median(value) - 1) < threshold_median and np.std(value) < threshold_std
+}
+
 
 
 best_a, best_b,best_gamma = None, None, None
 best_combination = None
+all_outputDataDecay = []
 
 for roi_pair in close_to_one_ratios.keys():
     # Extrai os índices das ROIs da chave
     i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
 
-    roi_values = all_green_rois[i]  
+    num_rounds=20
+    for round in range(num_rounds):
+        a_min, a_max = 0.5, 5.5
+        b_min, b_max = 0.5, 10.5
+        gamma_min, gamma_max = 1.0, 2.0
+        
+        # Ajusta os limites com base na iteração
+        bounds = [(a_min + round * 0.05, a_max + round * 0.05),
+                  (b_min + round * 0.05, b_max + round * 0.05),
+                  (gamma_min + round * 0.05, gamma_max + round * 0.05)]
 
-    #a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
-    a, b, gamma,adjusted_ratio= find_best_gamma(all_green_rois[i] ,all_green_rois[j])
 
-    if a is not None and b is not None:
-        if best_a is None or best_b is None or (a and b):  
-            best_a, best_b, best_gamma = a, b, gamma
-            best_combination = (i, j) 
+        #a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
+        a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j],bounds)
 
+        if a is not None and b is not None:
+            if best_a is None or best_b is None or (a and b):  
+                best_a, best_b, best_gamma = a, b, gamma
+                best_combination = (i, j) 
+
+
+        # Usei isso so para conseguir calcular o CRT depois 
+        RoiRed=np.array(RoiRed)
+        RoiGreen=np.array(RoiGreen)
+        RoiBlue= np.array(RoiBlue)
+
+        ROI1Corrigida= ((RoiGreen)**best_gamma)
+
+        time_stamps = np.array(time_stamps)
+
+        # Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro -
+        #  é somente para poder processa usando o pyCRT
+        ratiosr = ROI1Corrigida
+        ratiosg = ROI1Corrigida
+        ratiosb = ROI1Corrigida
+
+        #plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma,all_green_rois, time_stamps,RoiGreen,ROI1Corrigida,adjusted_ratio,folder_name,roi1)
+
+        ### ajusta PCRT 
+
+        channelsAvgIntensArr= np.column_stack((RoiRed, RoiGreen, RoiBlue))
+        pcrtO = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
+        #pcrt.showAvgIntensPlot()
+        #pcrtO.showPCRTPlot()
+        pcrtO.savePCRTPlot(f"Longe_pCRTOriginal{folder_name}ROI{i+1}ROI{j+1}.png")
+
+
+        ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
+        pcrtCorrigidogamma = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
+        #pcrt.showAvgIntensPlot()
+        #pcrtC.showPCRTPlot()
+        outputFilePCRT = f"Longe_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
+        pcrtCorrigidogamma.savePCRTPlot(outputFilePCRT)
+
+        ROI1CorrigidaCompleto= best_a+best_b*((RoiGreen)**best_gamma)
+
+        ratiosrC = ROI1CorrigidaCompleto
+        ratiosgC = ROI1CorrigidaCompleto
+        ratiosbC = ROI1CorrigidaCompleto
+
+        ratiosC=np.column_stack((ratiosrC,ratiosgC,ratiosbC))
+        pcrtComp = PCRT(time_stamps, ratiosC,exclusionMethod='best fit',exclusionCriteria=999)
+        #pcrt.showAvgIntensPlot()
+        #pcrtC.showPCRTPlot()
+        outputFilePCRT = f"Longe_pCRTCompletoa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
+        pcrtComp.savePCRTPlot(outputFilePCRT)
+
+
+
+        all_outputDataDecay.append({
+        "Best A": best_a,
+        "Best B": best_b,
+        "Best Gamma": best_gamma,
+        "pcrtOriginal": pcrtO.pCRT[0],
+        "incertezaOriginal":pcrtO.pCRT[1],
+        "pcrtCorrigido": pcrtCorrigidogamma.pCRT[0],
+        "incerteza":pcrtCorrigidogamma.pCRT[1],
+        "pcrtCorrigidoCompleto": pcrtComp.pCRT[0],
+        "incertezaCorrigidoCompleto":pcrtComp.pCRT[1],
+        # Adicione outros resultados conforme necessário
+    })
+                # Convertendo para DataFrame
+        df = pd.DataFrame(all_outputDataDecay)
+
+        # Salvando no Excel
+        outputCompleteData = f"resultadosCompletosPerto.xlsx"
+        df.to_excel(outputCompleteData, index=False)
+
+        print(f"Dados salvos em: {outputCompleteData}")
 
 if best_a is not None and best_b is not None:
     print(f"Melhor a: {best_a}, Melhor b: {best_b}, Melhor gamma: {best_gamma}, ROI utilizada: {best_combination}")
 else:
     print("Não foi possível encontrar valores válidos de a, b e gamma.")
-
-
-# Usei isso so para conseguir calcular o CRT depois 
-RoiRed=np.array(RoiRed)
-RoiGreen=np.array(RoiGreen)
-RoiBlue= np.array(RoiBlue)
-
-
-RoiRed = np.array(RoiRed) 
-RoiGreen = np.array(RoiGreen)
-RoiBlue = np.array(RoiBlue)
-
-ROI1Corrigida= (RoiGreen)**best_gamma
-
-time_stamps = np.array(time_stamps)
-
-# Calcula razão entre as intensidades normalizadas - desconsidere o ratiosr e ratiosb não vou usa-los no futuro -
-#  é somente para poder processa usando o pyCRT
-ratiosr = ROI1Corrigida
-ratiosg = ROI1Corrigida
-ratiosb = ROI1Corrigida
-
-plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma,all_green_rois, time_stamps,RoiGreen,ROI1Corrigida,adjusted_ratio,folder_name,roi1)
-
-
-
-### ajusta PCRT 
-
-channelsAvgIntensArr= np.column_stack((RoiRed, RoiGreen, RoiBlue))
-pcrt = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
-#pcrt.showAvgIntensPlot()
-pcrt.showPCRTPlot()
-pcrt.savePCRTPlot(f"perto_pCRTOriginal{folder_name}.png")
-
-
-ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
-pcrt = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
-#pcrt.showAvgIntensPlot()
-pcrt.showPCRTPlot()
-outputFilePCRT = f"perto_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}.png"
-pcrt.savePCRTPlot(outputFilePCRT)
-
 
