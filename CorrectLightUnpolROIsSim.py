@@ -110,11 +110,10 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, 
     axs[2, 2].legend()
 
     plt.tight_layout()
-    output_filename = f"perto_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}.png"
+    output_filename = f"Perto_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}ROI{i+1}ROI{j+1}completo.png"
     plt.savefig(output_filename, dpi=600)
     plt.show()
     plt.close()
-
 
 # Função para criar ROIs fixas dinamicamente
 def create_dynamic_rois(frame, num_rois, roi_width, roi_height):
@@ -459,14 +458,14 @@ for roi_pair in close_to_one_ratios.keys():
         pcrtO = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
         #pcrt.showAvgIntensPlot()
         #pcrtO.showPCRTPlot()
-        pcrtO.savePCRTPlot(f"Longe_pCRTOriginal{folder_name}ROI{i+1}ROI{j+1}.png")
+        pcrtO.savePCRTPlot(f"Perto_pCRTOriginal{folder_name}ROI{i+1}ROI{j+1}.png")
 
 
         ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
         pcrtCorrigidogamma = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
         #pcrt.showAvgIntensPlot()
         #pcrtC.showPCRTPlot()
-        outputFilePCRT = f"Longe_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
+        outputFilePCRT = f"Perto_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
         pcrtCorrigidogamma.savePCRTPlot(outputFilePCRT)
 
         ROI1CorrigidaCompleto= best_a+best_b*((RoiGreen)**best_gamma)
@@ -479,7 +478,7 @@ for roi_pair in close_to_one_ratios.keys():
         pcrtComp = PCRT(time_stamps, ratiosC,exclusionMethod='best fit',exclusionCriteria=999)
         #pcrt.showAvgIntensPlot()
         #pcrtC.showPCRTPlot()
-        outputFilePCRT = f"Longe_pCRTCompletoa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
+        outputFilePCRT = f"Perto_pCRTCompletoa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
         pcrtComp.savePCRTPlot(outputFilePCRT)
 
 

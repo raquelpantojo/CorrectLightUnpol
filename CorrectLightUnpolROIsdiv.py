@@ -111,7 +111,7 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, 
     axs[2, 2].legend()
 
     plt.tight_layout()
-    output_filename = f"Longe_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}ROI{i+1}ROI{j+1}completo.png"
+    output_filename = f"Longe_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}ROI{i+1}ROI{j+1}completo_gamma.png"
     plt.savefig(output_filename, dpi=600)
     plt.show()
     plt.close()
@@ -422,8 +422,8 @@ if best_pair:
                   (b_min + round * 0.05, b_max + round * 0.05),
                   (gamma_min + round * 0.05, gamma_max + round * 0.05)]
        
-        a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j],bounds)
-        #a, b, gamma,adjusted_ratio= find_best_gamma(all_green_rois[i] ,all_green_rois[j])
+        #a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j],bounds)
+        a, b, gamma,adjusted_ratio= find_best_gamma(all_green_rois[i] ,all_green_rois[j])
 
         if a is not None and b is not None:
             if best_a is None or best_b is None or (a and b):  
@@ -454,14 +454,14 @@ if best_pair:
         pcrtO = PCRT(time_stamps,channelsAvgIntensArr,exclusionMethod='best fit',exclusionCriteria=999)
         #pcrt.showAvgIntensPlot()
         #pcrtO.showPCRTPlot()
-        pcrtO.savePCRTPlot(f"Longe_pCRTOriginal{folder_name}ROI{i+1}ROI{j+1}.png")
+        pcrtO.savePCRTPlot(f"Longe_pCRTOriginal{folder_name}ROI{i+1}ROI{j+1}_gamma.png")
 
 
         ratios=np.column_stack((ratiosr,ratiosg,ratiosb))
         pcrtCorrigidogamma = PCRT(time_stamps, ratios,exclusionMethod='best fit',exclusionCriteria=999 )
         #pcrt.showAvgIntensPlot()
         #pcrtC.showPCRTPlot()
-        outputFilePCRT = f"Longe_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
+        outputFilePCRT = f"Longe_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo_gamma.png"
         pcrtCorrigidogamma.savePCRTPlot(outputFilePCRT)
 
         ROI1CorrigidaCompleto= best_a+best_b*((RoiGreen)**best_gamma)
@@ -474,7 +474,7 @@ if best_pair:
         pcrtComp = PCRT(time_stamps, ratiosC,exclusionMethod='best fit',exclusionCriteria=999)
         #pcrt.showAvgIntensPlot()
         #pcrtC.showPCRTPlot()
-        outputFilePCRT = f"Longe_pCRTCompletoa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
+        outputFilePCRT = f"Longe_pCRTCompletoa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo_gamma.png"
         pcrtComp.savePCRTPlot(outputFilePCRT)
 
 
@@ -495,7 +495,7 @@ if best_pair:
         df = pd.DataFrame(all_outputDataDecay)
 
         # Salvando no Excel
-        outputCompleteData = f"resultadosCompletos.xlsx"
+        outputCompleteData = f"resultadosCompletosLonge.xlsx"
         df.to_excel(outputCompleteData, index=False)
 
         print(f"Dados salvos em: {outputCompleteData}")
