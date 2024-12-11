@@ -1,5 +1,5 @@
 # Teste usando ROIS silimares
-# A razão entre as curvas das duas regiões deve ser menor que 1.
+# Teste com 4 ROis 
 
 import cv2 as cv
 import numpy as np
@@ -17,9 +17,9 @@ from src.pyCRT import PCRT
 
 # Caminho base para os arquivos do projeto
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
-base_path="C:/Users/Fotobio/Desktop/Estudo_ElasticidadePele"
-folder_name = "DespolarizadoP3"
-video_name="v6.mp4"
+base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
+folder_name = "teste1"
+video_name="v7.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 roi_width = 80 
 roi_height = 80
@@ -50,39 +50,28 @@ def plot_graph_curves(best_a, best_b, best_gamma, RoiGreen, ROI1Corrigida, ROICo
     
     plt.tight_layout()
     pastaSalvar= "C:/Users/Fotobio/Desktop/ResultadosAbgamma"
-    outputImageGraph = f"{pastaSalvar}/abPertoGrafico_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}ROI{i+1}ROI{j+1}completo.png"
+    outputImageGraph = f"{pastaSalvar}/abPertoGrafico_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}completo.png"
     plt.savefig(outputImageGraph, dpi=300)
     plt.show()
     plt.close()
 
 # Função de plotagem com a razão ajustada
-def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, all_green_rois, time_stamps, 
-                          RoiGreen, ROI1Corrigida, adjusted_ratio, folder_name, roi1):
-    """
-    Função para plotar a imagem original, os canais verdes e as razões ajustadas/corrigidas.
+def plot_image_and_ratios(frames, best_a, best_b, best_gamma, roi1, roi2,roi3, time_stamps, 
+                          RoiGreen,RoiGreen2, RoiGreen3, ROI1Corrigida, adjusted_ratio, folder_name):
     
-    Args:
-        frames: Lista de frames de vídeo.
-        best_combination: Melhor combinação de ROIs (índices i e j).
-        best_a, best_b, best_gamma: Parâmetros do ajuste.
-        all_green_rois: Lista de intensidades do canal verde para todas as ROIs.
-        time_stamps: Lista de timestamps para os frames.
-        RoiGreen: Intensidades do canal verde da ROI1.
-        ROI1Corrigida: Canal verde corrigido para ROI1.
-        adjusted_ratio: Razão ajustada entre as ROIs selecionadas.
-        folder_name: Nome da pasta para salvar o arquivo de saída.
-        roi1: Coordenadas da ROI1 no formato (x, y, largura, altura).
-    """
-    if best_combination is None:
-        print("Nenhuma combinação de ROIs encontrada.")
-        return
-    
-    i, j = best_combination
-    ratio_key = f"ROI{i+1}/ROI{j+1}"
-    original_ratio = ratios[ratio_key]
+
+
+    # Converta as listas para arrays do NumPy
+    roi_green2_array = np.array(RoiGreen2)
+    roi_green3_array = np.array(RoiGreen3)
+
+    # Divida as curvas elemento a elemento
+    ratios = roi_green2_array / roi_green3_array
      
     # Extrair coordenadas da ROI1
     x_roi1, y_roi1, w_roi1, h_roi1 = roi1
+    x_i, y_i, w_i, h_i = roi2
+    x_j, y_j, w_j, h_j = roi3
 
     fig, axs = plt.subplots(3, 3, figsize=(18, 12))
     
@@ -90,34 +79,31 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, 
     axs[0, 0].set_title('Imagem Original')
     axs[0, 0].axis('off')  
     
-    # Criar ROIs dinâmicas
-    rois = create_dynamic_rois(frames[0], num_rois, roi_width, roi_height)
-    x_i, y_i, w_i, h_i = rois[i]
-    x_j, y_j, w_j, h_j = rois[j]
+   
    
     # Adicionar retângulos das ROIs na imagem
     axs[0, 0].add_patch(plt.Rectangle((x_roi1, y_roi1), w_roi1, h_roi1, edgecolor='green', facecolor="none", linewidth=2))
     axs[0, 0].add_patch(plt.Rectangle((x_i, y_i), w_i, h_i, edgecolor='blue', facecolor='none', linewidth=2))
     axs[0, 0].add_patch(plt.Rectangle((x_j, y_j), w_j, h_j, edgecolor='red', facecolor='none', linewidth=2))
     axs[0, 0].text(x_roi1 + w_roi1 / 2, y_roi1 + h_roi1 / 2, "ROI1", color='green', ha='center', va='center', fontsize=8, weight='bold')
-    axs[0, 0].text(x_i + w_i / 2, y_i + h_i / 2, f"{i+1}", color='blue', ha='center', va='center', fontsize=8, weight='bold')
-    axs[0, 0].text(x_j + w_j / 2, y_j + h_j / 2, f"{j+1}", color='red', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0, 0].text(x_i + w_i / 2, y_i + h_i / 2, f"ROI2", color='blue', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0, 0].text(x_j + w_j / 2, y_j + h_j / 2, f"ROI3", color='red', ha='center', va='center', fontsize=8, weight='bold')
     
     # Remover subplots em branco da primeira coluna
     axs[1, 0].axis('off')
     axs[2, 0].axis('off')
 
-    axs[0, 1].plot(time_stamps, all_green_rois[i], label=f"Canal Verde ROI {i+1} ", color='blue')
+    axs[0, 1].plot(time_stamps, RoiGreen2, label=f"Canal Verde ROI2 ", color='blue')
     axs[0, 1].set_xlabel('Tempo (s)')
     axs[0, 1].set_ylabel('Intensidade do Canal Verde')
     axs[0, 1].legend()
 
-    axs[1, 1].plot(time_stamps, all_green_rois[j], label=f"Canal Verde ROI {j+1} ", color='red')
+    axs[1, 1].plot(time_stamps, RoiGreen3, label=f"Canal Verde ROI3  ", color='red')
     axs[1, 1].set_xlabel('Tempo (s)')
     axs[1, 1].set_ylabel('Intensidade do Canal Verde')
     axs[1, 1].legend()
 
-    axs[2, 1].plot(time_stamps, original_ratio, label=f"Razão ROI {i+1} / ROI {j+1}", color='orange')
+    axs[2, 1].plot(time_stamps, ratios, label=f"Razão ", color='orange')
     axs[2, 1].set_xlabel('Tempo (s)')
     axs[2, 1].set_ylabel('Razão Original')
     axs[2, 1].legend()
@@ -133,13 +119,13 @@ def plot_image_and_ratios(frames, best_combination, best_a, best_b, best_gamma, 
     axs[1, 2].set_ylabel('Intensidade do Canal Verde')
     axs[1, 2].legend()
 
-    axs[2, 2].plot(time_stamps, adjusted_ratio, label=f"Razão ROI {i+1} / ROI {j+1} corrigido", color='orange')
+    axs[2, 2].plot(time_stamps, adjusted_ratio, label=f"Razão corrigido", color='orange')
     axs[2, 2].set_xlabel('Tempo (s)')
     axs[2, 2].set_ylabel('Intensidade do Canal Verde')
     axs[2, 2].legend()
 
     plt.tight_layout()
-    output_filename = f"Perto_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}ROI{i+1}ROI{j+1}completo.png"
+    output_filename = f"Perto_a={best_a:.2f}_b={best_b:.2f}_g={best_gamma:.2f}_{folder_name}ROIcompleto.png"
     plt.savefig(output_filename, dpi=600)
     plt.show()
     plt.close()
@@ -156,21 +142,14 @@ def create_dynamic_rois(frame, num_rois, roi_width, roi_height):
     return rois
 
 
-
 # Função para calcular as razões 
-def calculate_ratios(all_green_rois, num_rois,tolerance=0.01):
-    roi_combinations = list(combinations(range(num_rois), 2))
-    ratios = {}
-    matching_ratios = {}
-    for i, j in roi_combinations:
-            if len(all_green_rois[i]) == len(all_green_rois[j]) > 0:
-                ratio = all_green_rois[i] / all_green_rois[j]
-                
-                # Verifica se todos os valores da razão estão dentro da tolerância em relação a 1
-                if np.all(np.abs(ratio - 1) <= tolerance):
-                    matching_ratios[f"ROI{i+1}/ROI{j+1}"] = ratio
-
-    return matching_ratios
+def calculate_ratios(roi2, roi3):
+    roi2_array = np.array(roi2)
+    roi3_array = np.array(roi3)
+    
+    ratios = roi2_array / roi3_array
+    print(ratios)
+    return ratios.tolist() 
 
 
 def find_best_a_b(green_roi2, green_roi3,bounds):
@@ -222,8 +201,8 @@ def find_best_a_b(green_roi2, green_roi3,bounds):
 
     # Definir as restrições
     restricoes = [
-        #{'type': 'ineq', 'fun': restricao_std_error, 'args': (green_roi2, green_roi3)},
-        {'type': 'ineq', 'fun': restricao_mean_abs_error, 'args': (green_roi2, green_roi3)}
+        {'type': 'ineq', 'fun': restricao_std_error, 'args': (green_roi2, green_roi3)},
+        #{'type': 'ineq', 'fun': restricao_mean_abs_error, 'args': (green_roi2, green_roi3)}
     ]
 
     for _ in range(10):  # Teste 10 vezes 
@@ -281,7 +260,7 @@ def find_best_gamma(green_roi2, green_roi3,bounds):
         return 0.01 - mean_abs_error  # erro absoluto médio deve ser menor que 0.01
 
     # Inicialização para otimizar apenas gamma
-    x0 = np.array([2.0])  # Apenas o valor de gamma será otimizado
+    x0 = np.array([2.0])  # Apenas o valor de gamma será otimizado 0.1 e 5 
 
     # Definindo os limites para gamma, com valor inicial maior que 0
     bounds = [(0.1, None)]  # gamma > 0
@@ -307,11 +286,12 @@ def find_best_gamma(green_roi2, green_roi3,bounds):
 
 # Função para selecionar ROIs com o vídeo rodando
 def select_rois():
-    global roi1
+
+    global roi1,roi2,roi3,roi4
     print("Pressione ENTER para pausar e selecionar ROI1.")
     while True:
         ret, frame = cap.read()
-        frame = cv.resize(frame, (0, 0), fx=0.5, fy=0.5)
+        #frame = cv.resize(frame, (0, 0), fx=0.5, fy=0.5)
         if not ret:
             print("Fim do vídeo ou erro na leitura do frame.")
             sys.exit(1)
@@ -322,10 +302,17 @@ def select_rois():
             roi1 = cv.selectROI("Selecionar ROI1", frame)
             print(roi1)
             cv.destroyAllWindows()
+            roi2 = cv.selectROI("Selecionar ROI2", frame)
+            print(roi2)
+            cv.destroyAllWindows()
+            roi3 = cv.selectROI("Selecionar ROI3", frame)
+            print(roi3)
+            cv.destroyAllWindows()
+            roi4 = cv.selectROI("Selecionar ROI4", frame)
+            print(roi4)
+            cv.destroyAllWindows()
             break
   
-
-
 
 
 ############################Inicalizando o programa####################################
@@ -341,91 +328,63 @@ if not cap.isOpened():
     print("Erro ao abrir o vídeo.")
     sys.exit(1)
 
-# Inicialização das variáveis
-all_green_rois = [[] for _ in range(num_rois)]
-time_stamps = []
-frames = []
-frame_count = 0
-fps = cap.get(cv.CAP_PROP_FPS)
-
-# Processa o vídeo frame a frame
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
-    frame_resized = cv.resize(frame, (0, 0), fx=0.5, fy=0.5)
-    frames.append(frame_resized)
-    
-    rois = create_dynamic_rois(frame_resized, num_rois, roi_width, roi_height)
-    for i, roi in enumerate(rois):
-        x, y, w, h = roi
-        roi_frame = frame_resized[y:y+h, x:x+w]
-        roi_frame = roi_frame 
-        if roi_frame.size > 0:  # Certifica-se de que a ROI não está vazia
-            all_green_rois[i].append(np.mean(roi_frame[:, :, 1]))
-    
-    time_stamps.append(frame_count / fps)
-    frame_count += 1
-
-cap.release()
-
-time_stamps = np.array(time_stamps)
-all_green_rois = [np.array(roi) for roi in all_green_rois]
-
-
-
-
-
-
-# Verifica o caminho do vídeo
-video_path = os.path.join(base_path, folder_name, video_name)
-if not os.path.exists(video_path):
-    print(f"Vídeo {video_name} não encontrado!")
-    sys.exit(1)
-
-# Inicializa a captura de vídeo
-cap = cv.VideoCapture(video_path)
-if not cap.isOpened():
-    print("Erro ao abrir o vídeo.")
-    sys.exit(1)
 
 # Variáveis para as ROIs
 roi1 = None
+roi2 = None
+roi3 = None
+roi4 = None
+
 frame_count = 0
 fps = cap.get(cv.CAP_PROP_FPS)
 
 
 # Selecionar as ROIs
-#select_rois()
+select_rois()
 #roi1=(553, 113, 91, 88) #v7
-roi1=(41, 287, 106, 83) #v6
+#roi1=(41, 287, 106, 83) #v6
 # Reinicia o vídeo
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
 # Listas para armazenar intensidades e timestamps
-RoiRed,RoiGreen,RoiBlue,time_stamps = [], [],[],[]
-
+RoiRed,RoiGreen,RoiBlue,time_stamps,RoiGreen2,RoiGreen3 = [], [],[],[],[],[]
+frames = []
 # Processa o vídeo frame a frame
 while True:
     ret, frame = cap.read()
     if not ret:
         break
-    frame = cv.resize(frame, (0, 0), fx=0.5, fy=0.5)    
+
+   
+    # frame = cv.resize(frame, (0, 0), fx=0.5, fy=0.5)   
+    frames.append(frame) 
+    
     # Extrai as ROIs e calcula a média do canal verde
     roi1_frame = frame[int(roi1[1]):int(roi1[1] + roi1[3]), int(roi1[0]):int(roi1[0] + roi1[2])]
-    
+    roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
+    roi3_frame = frame[int(roi3[1]):int(roi3[1] + roi3[3]), int(roi3[0]):int(roi3[0] + roi3[2])]
+    roi3_frame = frame[int(roi4[1]):int(roi4[1] + roi4[3]), int(roi4[0]):int(roi4[0] + roi4[2])]  
+
     # ROI 1
-    RoiRed.append(np.mean(roi1_frame[:, :, 0]))
+   
     RoiGreen.append(np.mean(roi1_frame[:, :, 1]))
-    RoiBlue.append(np.mean(roi1_frame[:, :, 2]))
+    RoiGreen2.append(np.mean(roi2_frame[:, :, 1]))
+    RoiGreen3.append(np.mean(roi3_frame[:, :, 1]))
+    RoiGreen4.append(np.mean(roi4_frame[:, :, 1]))      
+
+    
 
     time_stamps.append(frame_count / fps)
     frame_count += 1
 
 cap.release()
 
+if len(frames) == 0:
+    raise ValueError("Nenhum frame foi lido do vídeo.")
+
+"""
 # usado para encontrar ROIs perto
-ratios = calculate_ratios(all_green_rois, num_rois)
+ratios = calculate_ratios(RoiGreen2,RoiGreen3)
 
 
 # usado para encontrar ROIs proximas 
@@ -441,29 +400,35 @@ close_to_one_ratios = {
 
 
 
+"""
+
 best_a, best_b,best_gamma = None, None, None
 best_combination = None
 all_outputDataDecay = []
 
-for roi_pair in close_to_one_ratios.keys():
+#for roi_pair in close_to_one_ratios.keys():
     # Extrai os índices das ROIs da chave
-    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
+#    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
 
-    bounds = [(0.1, None), (0.1, None), (0.1, 2.5)]
+bounds = [(0.1, None), (0.1, None), (0.1, 2.5)]
    
     #a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
-    a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j],bounds)
+a, b, gamma,adjusted_ratio= find_best_a_b(RoiGreen2,RoiGreen3,bounds)
 
-    best_a, best_b, best_gamma = a, b, gamma
-    best_combination = (i, j) 
+best_a, best_b, best_gamma = a, b, gamma
+
+
 
 
     # Usei isso so para conseguir calcular o CRT depois 
     #RoiRed=np.array(RoiRed)
-    RoiGreen=np.array(RoiGreen)
+RoiGreen=np.array(RoiGreen)
     #RoiBlue= np.array(RoiBlue)
 
-    ROI1Corrigida= ((RoiGreen)**best_gamma)
+ROI1Corrigida= ((RoiGreen)**best_gamma)
+
+plot_image_and_ratios(frames, best_a, best_b, best_gamma, roi1, roi2,roi3, time_stamps, 
+                          RoiGreen,RoiGreen2, RoiGreen3, ROI1Corrigida, adjusted_ratio, folder_name)
 
     #time_stamps = np.array(time_stamps)
 
@@ -491,7 +456,7 @@ for roi_pair in close_to_one_ratios.keys():
     #outputFilePCRT = f"Perto_pCRTa={best_a: .2f}b={best_b: .2f}g={best_gamma: .2f}{folder_name}ROI{i+1}ROI{j+1}completo.png"
     #pcrtCorrigidogamma.savePCRTPlot(outputFilePCRT)
 
-    ROI1CorrigidaCompleto= best_a+(best_b*(RoiGreen**best_gamma))
+ROI1CorrigidaCompleto= best_a+(best_b*(RoiGreen**best_gamma))
 
     #ratiosrC = ROI1CorrigidaCompleto
     #ratiosgC = ROI1CorrigidaCompleto
@@ -505,56 +470,55 @@ for roi_pair in close_to_one_ratios.keys():
     #pcrtComp.savePCRTPlot(outputFilePCRT)
     
     
-    plot_graph_curves(best_a, best_b, best_gamma, RoiGreen, ROI1Corrigida, ROI1CorrigidaCompleto)
+plot_graph_curves(best_a, best_b, best_gamma, RoiGreen, ROI1Corrigida, ROI1CorrigidaCompleto)
 
 
-    all_outputDataDecay.append({
+
+all_outputDataDecay.append({
     "Best A": best_a,
     "Best B": best_b,
     "Best Gamma": best_gamma,
     # Adicione outros resultados conforme necessário
 })
             # Convertendo para DataFrame
-    df = pd.DataFrame(all_outputDataDecay)
+df = pd.DataFrame(all_outputDataDecay)
 
     # Salvando no Excel
-    outputCompleteData = f"resultadosCompletosPerto.xlsx"
-    df.to_excel(outputCompleteData, index=False)
+outputCompleteData = f"resultadosCompletosPerto.xlsx"
+df.to_excel(outputCompleteData, index=False)
 
-    print(f"Dados salvos em: {outputCompleteData}")
+print(f"Dados salvos em: {outputCompleteData}")
 
-    """
-    all_outputDataDecay.append({
-    "Best A": best_a,
-    "Best B": best_b,
-    "Best Gamma": best_gamma,
-    "pcrtOriginal": pcrtO.pCRT[0],
-    "incertezaOriginal":pcrtO.pCRT[1],
-    "pcrtCorrigido": pcrtCorrigidogamma.pCRT[0],
-    "incerteza":pcrtCorrigidogamma.pCRT[1],
-    "pcrtCorrigidoCompleto": pcrtComp.pCRT[0],
-    "incertezaCorrigidoCompleto":pcrtComp.pCRT[1],
-    # Adicione outros resultados conforme necessário
+"""
+all_outputDataDecay.append({
+"Best A": best_a,
+"Best B": best_b,
+"Best Gamma": best_gamma,
+"pcrtOriginal": pcrtO.pCRT[0],
+"incertezaOriginal":pcrtO.pCRT[1],
+"pcrtCorrigido": pcrtCorrigidogamma.pCRT[0],
+"incerteza":pcrtCorrigidogamma.pCRT[1],
+"pcrtCorrigidoCompleto": pcrtComp.pCRT[0],
+"incertezaCorrigidoCompleto":pcrtComp.pCRT[1],
+# Adicione outros resultados conforme necessário
 })
-            # Convertendo para DataFrame
-    df = pd.DataFrame(all_outputDataDecay)
+        # Convertendo para DataFrame
+df = pd.DataFrame(all_outputDataDecay)
 
-    # Salvando no Excel
-    outputCompleteData = f"resultadosCompletosPerto.xlsx"
-    df.to_excel(outputCompleteData, index=False)
+# Salvando no Excel
+outputCompleteData = f"resultadosCompletosPerto.xlsx"
+df.to_excel(outputCompleteData, index=False)
 
-    print(f"Dados salvos em: {outputCompleteData}")
-    
-    
-    Keyword arguments:
-    argument -- description
-    Return: return_description
-    """
-    
-    
+print(f"Dados salvos em: {outputCompleteData}")
 
-if best_a is not None and best_b is not None:
+
+Keyword arguments:
+argument -- description
+Return: return_description
+
+
+    if best_a is not None and best_b is not None:
     print(f"Melhor a: {best_a}, Melhor b: {best_b}, Melhor gamma: {best_gamma}, ROI utilizada: {best_combination}")
-else:
+    else:
     print("Não foi possível encontrar valores válidos de a, b e gamma.")
-
+"""

@@ -284,7 +284,7 @@ def find_best_gamma(green_roi2, green_roi3):
 
 # Função para selecionar ROIs com o vídeo rodando
 def select_rois():
-    global roi1
+    global roi1,roi2,roi3
     print("Pressione ENTER para pausar e selecionar ROI1.")
     while True:
         ret, frame = cap.read()
@@ -296,11 +296,19 @@ def select_rois():
         cv.imshow("Selecionar ROIs", frame)
         key = cv.waitKey(30) & 0xFF
         if key == 13:  # Tecla Enter
-            roi1 = cv.selectROI("Selecionar ROI1", frame)
+            #roi1 = cv.selectROI("Selecionar ROI1", frame)
+            #print(roi1)
+            #cv.destroyAllWindows()
+            roi2 = cv.selectROI("Selecionar ROI1", frame)
             print(roi1)
             cv.destroyAllWindows()
+            roi3= cv.selectROI("Selecionar ROI1", frame)
+            print(roi1)
+            cv.destroyAllWindows()
+
             break
-  
+
+#select_rois()
 
 
 
