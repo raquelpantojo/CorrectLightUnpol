@@ -20,9 +20,13 @@ from src.pyCRT import PCRT
 
 # Caminho base para os arquivos do projeto
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
-base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
-folder_name = "teste1"
-video_name="v7.mp4"
+#base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
+base_path="C:/Users/Fotobio/Documents/GitHub"
+#folder_name = "teste1"
+folder_name="CorrectLightUnpol"
+#video_name="v5.mp4"
+video_name = "SeiyLedDesp4.mp4"
+#video_name = "NatanLedDesp6.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 roi_width = 80 
 roi_height = 80
@@ -44,37 +48,39 @@ def plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stam
     axs[0].imshow(cv.cvtColor(frames[0], cv.COLOR_BGR2RGB))
     axs[0].set_title('Imagem Original')
     axs[0].axis('off')
+    axs[0].add_patch(plt.Rectangle((x_roi1,y_roi1),w_roi1,h_roi1,edgecolor='green',facecolor='none',linewidth=2))
     axs[0].add_patch(plt.Rectangle((x_i, y_i), w_i, h_i, edgecolor='blue', facecolor='none', linewidth=2))
     axs[0].add_patch(plt.Rectangle((x_j, y_j), w_j, h_j, edgecolor='red', facecolor='none', linewidth=2))
     axs[0].add_patch(plt.Rectangle((x_k, y_k), w_k, h_k, edgecolor='orange', facecolor='none', linewidth=2))
 
-    axs[0].text(x_i + w_i / 2, y_i + h_i / 2, f"1", color='blue', ha='center', va='center', fontsize=8, weight='bold')
-    axs[0].text(x_j + w_j / 2, y_j + h_j / 2, f"2", color='red', ha='center', va='center', fontsize=8, weight='bold')
-    axs[0].text(x_k + w_k / 2, y_k + h_k / 2, f"3", color='orange', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0].text(x_roi1 + w_roi1 / 2, y_roi1 + h_roi1 / 2, f"1", color='green', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0].text(x_i + w_i / 2, y_i + h_i / 2, f"2", color='blue', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0].text(x_j + w_j / 2, y_j + h_j / 2, f"3", color='red', ha='center', va='center', fontsize=8, weight='bold')
+    axs[0].text(x_k + w_k / 2, y_k + h_k / 2, f"4", color='orange', ha='center', va='center', fontsize=8, weight='bold')
 
     # Subplot (4, 2, 2) - ROI 1
-    axs[1].plot(time_stamps, RoiGreen2, label="ROI 1", color='blue')
+    axs[1].plot(time_stamps, RoiGreen2, label="ROI 2", color='blue')
     #axs[1].set_xlabel('Tempo (s)')
     #axs[1].set_ylim(100, 255)
     axs[1].set_ylabel('Intensidade do Canal Verde')
     axs[1].legend()
 
     # Subplot (4, 2, 4) - ROI 2
-    axs[3].plot(time_stamps, RoiGreen3, label="ROI 2", color='red')
+    axs[3].plot(time_stamps, RoiGreen3, label="ROI 3", color='red')
     #axs[3].set_xlabel('Tempo (s)')
     #axs[3].set_ylim(100, 255)
     axs[3].set_ylabel('Intensidade do Canal Verde')
     axs[3].legend()
 
     # Subplot (4, 2, 6) - ROI 3
-    axs[5].plot(time_stamps, RoiGreen4, label="ROI 3", color='orange')
+    axs[5].plot(time_stamps, RoiGreen4, label="ROI 4", color='orange')
     #axs[5].set_xlabel('Tempo (s)')
     #axs[5].set_ylim(100, 255)
     axs[5].set_ylabel('Intensidade do Canal Verde')
     axs[5].legend()
 
     # Subplot (4, 2, 8) - ROI corrigida
-    axs[7].plot(time_stamps, ROI4Corrigida, label="ROI 3 Corrigida/ ROI 1 Corrigida", color='darkgreen')
+    axs[7].plot(time_stamps, ROI4Corrigida, label="ROI 1 Corrigida/ ROI 3 Corrigida", color='darkgreen')
     axs[7].set_xlabel('Tempo (s)')
     axs[7].set_ylabel('Intensidade do Canal Verde')
     axs[7].legend()
@@ -86,7 +92,7 @@ def plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stam
 
     # Ajustar layout e salvar
     plt.tight_layout()
-    output_filename = f"ROIEscolhidas_a={a:.2f}_b={b:.2f}_g={gamma:.2f}_{folder_name}menormaior.png"
+    output_filename = f"ROIbrancasEscolhidas_a={a:.2f}_b={b:.2f}_g={gamma:.2f}_{folder_name}menormaior.png"
     plt.savefig(output_filename, dpi=600)
     plt.show()
     plt.close()
@@ -176,13 +182,7 @@ def find_best_a_b(green_roi2, green_roi3,bounds):
         adjusted_ratio = (a + b * (green_roi2 ** gamma)) / (a + b * (green_roi3 ** gamma))
         std_error = np.std(adjusted_ratio)
         return std_error  
-
-    def restricao_mean_abs_error(params, green_roi2, green_roi3):
-        a, b, gamma = params
-        adjusted_ratio = (a + b * (green_roi2 ** gamma)) / (a + b * (green_roi3 ** gamma))
-        # Calcular o erro absoluto médio
-        mean_abs_error = np.mean(np.abs(adjusted_ratio - 1))
-        return mean_abs_error  
+ 
 
     # Chute inicial para os parâmetros a, b, gamma
     #x0 = [10,1.5, 1]  # valores iniciais para a, b, gamma
@@ -192,22 +192,21 @@ def find_best_a_b(green_roi2, green_roi3,bounds):
 
     # Definir as restrições
     restricoes = [
-        #{'type': 'ineq', 'fun': restricao_std_error, 'args': (green_roi2, green_roi3)},
-        {'type': 'ineq', 'fun': restricao_mean_abs_error, 'args': (green_roi2, green_roi3)}
+        {'type': 'ineq', 'fun': restricao_std_error, 'args': (green_roi2, green_roi3)},
+        #{'type': 'ineq', 'fun': restricao_mean_abs_error, 'args': (green_roi2, green_roi3)}
     ]
 
-    for _ in range(10):  # Teste 10 vezes 
-        x0 = np.random.uniform(0, 10, size=3)
+    for _ in range(20):  
+        x0 = np.random.uniform(bounds[0][0], bounds[0][1], size=3)
         # Minimização
         result = minimize(funcao_objetivo, x0, args=(green_roi2, green_roi3), method='SLSQP',
                             bounds=bounds, constraints=restricoes)
-        if result.fun < best_fun:
+        if result.success and (best_result is None or result.fun < best_fun):
             best_fun = result.fun
-            best_result = result
-            a_otimizado, b_otimizado, gamma_otimizado = result.x
-            adjusted_ratio = (a_otimizado + b_otimizado * (green_roi2 ** gamma_otimizado)) / \
-                            (a_otimizado + b_otimizado * (green_roi3 ** gamma_otimizado))
-            return a_otimizado, b_otimizado, gamma_otimizado, adjusted_ratio
+            best_result = result.x
+            adjusted_ratio = (best_result[0] + best_result[1] * (green_roi2 ** best_result[2])) / \
+                             (best_result[0] + best_result[1] * (green_roi3 ** best_result[2]))
+            return best_result[0], best_result[1], best_result[2], adjusted_ratio
         else:
             print("Otimização não convergiu: ", result.message)
             return None
@@ -281,10 +280,11 @@ def select_rois():
         cv.imshow("Selecionar ROIs", frame)
         key = cv.waitKey(30) & 0xFF
         if key == 13:  # Tecla Enter
-            """
+           
             roi1 = cv.selectROI("Selecionar ROI1", frame)
             print(roi1)
             cv.destroyAllWindows()
+            
             roi2 = cv.selectROI("Selecionar ROI2", frame)
             print(roi2)
             cv.destroyAllWindows()
@@ -295,10 +295,12 @@ def select_rois():
             print(roi4)
             cv.destroyAllWindows()
             """
-            
             roi5 = cv.selectROI("Selecionar ROI5", frame)
             print(roi5)
             cv.destroyAllWindows()
+            """
+         
+            
             break
   
 
@@ -330,17 +332,31 @@ fps = cap.get(cv.CAP_PROP_FPS)
 
 # Selecionar as ROIs
 
-#roi1=(553, 113, 91, 88) #v7
+#roi1=(553, 113, 91, 88) #v7 com resize
 #roi1=(41, 287, 106, 83) #v6
 
-roi1=(1121, 222, 154, 154)
-roi2=(1810, 9, 41, 93)
-roi3=(43, 22, 94, 82)
-roi4=(1794, 744, 76, 84)
-roi5=(453, 199, 84, 82)
 #select_rois()
 
-# Reinicia o vídeo
+#roi1= (1091, 623, 188, 181) #v5
+#roi1=(1121, 222, 154, 154) #v7 original
+#roi2=(1810, 9, 41, 93)
+#roi3=(43, 22, 94, 82)
+#roi4=(1794, 744, 76, 84)
+#roi5=(453, 199, 84, 82)
+
+# rois do video do Seyi
+roi1= (545, 247, 155, 151)
+roi2= (1320, 622, 72, 80)
+roi3=(834, 582, 170, 42)
+roi4=(1317, 873, 53, 80)
+
+# rois do video do Natan
+#roi1= (457, 571, 165, 215)
+#roi2= (209, 81, 102, 97)
+#roi3=(694, 139, 83, 73)
+#roi4=(1409, 22, 121, 70)
+
+
 
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
@@ -362,7 +378,7 @@ while True:
     roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
     roi3_frame = frame[int(roi3[1]):int(roi3[1] + roi3[3]), int(roi3[0]):int(roi3[0] + roi3[2])]
     roi4_frame = frame[int(roi4[1]):int(roi4[1] + roi4[3]), int(roi4[0]):int(roi4[0] + roi4[2])]  
-    roi5_frame = frame[int(roi5[1]):int(roi5[1] + roi5[3]), int(roi5[0]):int(roi5[0] + roi5[2])] 
+    #roi5_frame = frame[int(roi5[1]):int(roi5[1] + roi5[3]), int(roi5[0]):int(roi5[0] + roi5[2])] 
 
     # ROI 1
    
@@ -370,7 +386,7 @@ while True:
     RoiGreen2.append(np.mean(roi2_frame[:, :, 1]))
     RoiGreen3.append(np.mean(roi3_frame[:, :, 1]))
     RoiGreen4.append(np.mean(roi4_frame[:, :, 1]))   
-    RoiGreen5.append(np.mean(roi5_frame[:, :, 1]))    
+    #RoiGreen5.append(np.mean(roi5_frame[:, :, 1]))    
 
 
     time_stamps.append(frame_count / fps)
@@ -383,36 +399,48 @@ cap.release()
     # Extrai os índices das ROIs da chave
 #    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
 
-bounds = [(0.1, 10), (0.1, 10), (0.1, 10)]
+bounds = [(10, 100), (0.5, 10), (2, 2.3)]
    
 #a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
-#a, b, gamma, adjusted_ratio= find_best_a_b(RoiGreen3,RoiGreen4,bounds)
-a, b, gamma, adjusted_ratio= find_best_gamma(RoiGreen5,RoiGreen4)
+a, b, gamma, adjusted_ratio= find_best_a_b(RoiGreen2,RoiGreen3,bounds)
+#a, b, gamma, adjusted_ratio= find_best_gamma(RoiGreen5,RoiGreen4)
 
-gamma1=1
-#ROICorrigida = (a + b * (RoiGreen1 ** gamma1)) / (a + b * (RoiGreen5 ** gamma1))
-ROICorrigida = np.array(RoiGreen1) /np.array(RoiGreen4)
 
+ROICorrigida = (a + b * (RoiGreen1 ** gamma)) / (a + b * (RoiGreen3 ** gamma))
+print(f"a={a} b={b} gamma={gamma}")
+#ROICorrigida = np.array(RoiGreen1) 
+time_stamps=np.array(time_stamps)
 
 outputImageGraph = f"Casoextra.png"
 plot_graph_curves(RoiGreen1, ROICorrigida,outputImageGraph)
 
+plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROICorrigida, folder_name)
+
 """
 
-ratiosrC = ROI4Corrigida
-ratiosgC = ROI4Corrigida
-ratiosbC = ROI4Corrigida
+
+max_index = np.argmax(ROICorrigida)
+shift_frame = 1
+max_index_shifted = min(max_index + shift_frame, len(ROICorrigida))
+
+timeStampsShiftFrame=time_stamps[max_index_shifted:]
+ROICorrigidaShiftFrame = ROICorrigida[max_index_shifted:]
+
+ratiosrC = ROICorrigidaShiftFrame
+ratiosgC = ROICorrigidaShiftFrame
+ratiosbC = ROICorrigidaShiftFrame
 
 ratiosC=np.column_stack((ratiosrC,ratiosgC,ratiosbC))
-pcrtComp = PCRT(time_stamps, ratiosC,exclusionMethod='best fit',exclusionCriteria=999)
+pcrtComp = PCRT(timeStampsShiftFrame, ratiosC,exclusionMethod='best fit',exclusionCriteria=999)
+outputFilePCRTRGB = f"pCRTDeslocadoRGB{shift_frame}{video_name}.png"
 pcrtComp.showAvgIntensPlot()
-#pcrtComp.showPCRTPlot()
-outputFilePCRT = f"pCRTCompletocompletoCaso1.png"
+pcrtComp.showPCRTPlot()
+outputFilePCRT = f"pCRTDeslocado{shift_frame}{video_name}.png"
 pcrtComp.savePCRTPlot(outputFilePCRT)
 
 
 
-print(f"a= {a} b = {b} gamma = {gamma}")
+#print(f"a= {a} b = {b} gamma = {gamma}")
 #plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROI4Corrigida, folder_name)
 
 
@@ -440,8 +468,6 @@ data = {
     'RoiGreen5': stats_RoiGreen5,
     'ROICorrigida': stats_Corrigida,
 }
-
-
 
 
 
