@@ -25,8 +25,10 @@ base_path="C:/Users/Fotobio/Documents/GitHub"
 #folder_name = "teste1"
 folder_name="CorrectLightUnpol"
 #video_name="v5.mp4"
-video_name = "SeiyLedDesp4.mp4"
+#video_name = "SeiyLedDesp4.mp4"
 #video_name = "NatanLedDesp6.mp4"
+#video_name ="SeiyLedPol6.mp4"
+video_name="NatanledPol5.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 roi_width = 80 
 roi_height = 80
@@ -196,20 +198,20 @@ def find_best_a_b(green_roi2, green_roi3,bounds):
         #{'type': 'ineq', 'fun': restricao_mean_abs_error, 'args': (green_roi2, green_roi3)}
     ]
 
-    for _ in range(20):  
-        x0 = np.random.uniform(bounds[0][0], bounds[0][1], size=3)
+    
+    x0 = [10, 1.0, 1.0]
         # Minimização
-        result = minimize(funcao_objetivo, x0, args=(green_roi2, green_roi3), method='SLSQP',
-                            bounds=bounds, constraints=restricoes)
-        if result.success and (best_result is None or result.fun < best_fun):
-            best_fun = result.fun
-            best_result = result.x
-            adjusted_ratio = (best_result[0] + best_result[1] * (green_roi2 ** best_result[2])) / \
-                             (best_result[0] + best_result[1] * (green_roi3 ** best_result[2]))
-            return best_result[0], best_result[1], best_result[2], adjusted_ratio
-        else:
-            print("Otimização não convergiu: ", result.message)
-            return None
+    result = minimize(funcao_objetivo, x0, args=(green_roi2, green_roi3), method='SLSQP',
+                        bounds=bounds, constraints=restricoes)
+    if result.success and (best_result is None or result.fun < best_fun):
+        best_fun = result.fun
+        best_result = result.x
+        adjusted_ratio = (best_result[0] + best_result[1] * (green_roi2 ** best_result[2])) / \
+                            (best_result[0] + best_result[1] * (green_roi3 ** best_result[2]))
+        return best_result[0], best_result[1], best_result[2], adjusted_ratio
+    else:
+        print("Otimização não convergiu: ", result.message)
+        return None
 
 
 
@@ -335,7 +337,7 @@ fps = cap.get(cv.CAP_PROP_FPS)
 #roi1=(553, 113, 91, 88) #v7 com resize
 #roi1=(41, 287, 106, 83) #v6
 
-#select_rois()
+select_rois()
 
 #roi1= (1091, 623, 188, 181) #v5
 #roi1=(1121, 222, 154, 154) #v7 original
@@ -344,19 +346,36 @@ fps = cap.get(cv.CAP_PROP_FPS)
 #roi4=(1794, 744, 76, 84)
 #roi5=(453, 199, 84, 82)
 
-# rois do video do Seyi
-roi1= (545, 247, 155, 151)
-roi2= (1320, 622, 72, 80)
-roi3=(834, 582, 170, 42)
-roi4=(1317, 873, 53, 80)
+# rois do video do Seyi Despolarizado
+#roi1= (545, 247, 155, 151)
+#roi2= (1320, 622, 72, 80)
+#roi3=(834, 582, 170, 42)
+#roi4=(1317, 873, 53, 80)
 
-# rois do video do Natan
+# rois do video do Seyi Despolarizado teste2
+#roi1=(523, 246, 180, 147)
+#roi2=(667, 953, 46, 51)
+#roi3=(1004, 949, 51, 52)
+#roi4=(996, 677, 51, 56)
+
+# rois do video do Seyi Polarizado
+#roi1=(594, 183, 124, 131)
+#roi2=(555, 799, 51, 48)
+#roi3=(993, 926, 38, 48)
+#roi4=(1088, 775, 43, 86)
+
+
+# rois do video do Natan depsolarizado
 #roi1= (457, 571, 165, 215)
 #roi2= (209, 81, 102, 97)
 #roi3=(694, 139, 83, 73)
 #roi4=(1409, 22, 121, 70)
 
-
+# rois do video do Natan polarizado
+#roi1= 
+#roi2= 
+#roi3=
+#roi4=
 
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
@@ -399,7 +418,7 @@ cap.release()
     # Extrai os índices das ROIs da chave
 #    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
 
-bounds = [(10, 100), (0.5, 10), (2, 2.3)]
+bounds = [(0.1, 100), (1, 10), (1, 2.3)]
    
 #a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
 a, b, gamma, adjusted_ratio= find_best_a_b(RoiGreen2,RoiGreen3,bounds)
@@ -411,7 +430,7 @@ print(f"a={a} b={b} gamma={gamma}")
 #ROICorrigida = np.array(RoiGreen1) 
 time_stamps=np.array(time_stamps)
 
-outputImageGraph = f"Casoextra.png"
+outputImageGraph = f"CasoFototipoII.png"
 plot_graph_curves(RoiGreen1, ROICorrigida,outputImageGraph)
 
 plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROICorrigida, folder_name)
