@@ -3,8 +3,7 @@ import numpy as np
 import os
 import sys
 
-sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT")
-from src.pyCRT import PCRT
+
 
 
 def correct_flat_field_bgr_video(video_path, video_path_white, output_path, gamma):
@@ -70,14 +69,18 @@ def correct_flat_field_bgr_video(video_path, video_path_white, output_path, gamm
 
 
 # Caminho base para os arquivos do projeto
-base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol"
-folder_name = "DespolarizadoP5"
-video_name = "v9.mp4"
+#base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol"
+base_path="C:/Users/raque/OneDrive/Documentos/GitHub"
+folder_name = "CorrectLightUnpol"
+video_name = "SeiyLedDesp4.mp4"
+
+base_pathw="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol"
+folder_namew = "DespolarizadoP5"
 video_name_white = "imgWhite2.mp4"
-output_video_name = "corrected_v10_gamma=1.mp4"
+output_video_name = "corrected_Seyi.mp4"
 
 video_path = os.path.join(base_path, folder_name, video_name)
-video_path_white = os.path.join(base_path, folder_name, video_name_white)
+video_path_white = os.path.join(base_pathw, folder_namew, video_name_white)
 output_video_path = os.path.join(base_path, folder_name, output_video_name)
 
 gamma =1

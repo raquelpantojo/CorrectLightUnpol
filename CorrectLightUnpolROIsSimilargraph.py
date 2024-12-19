@@ -10,16 +10,20 @@ from itertools import combinations
 from scipy.optimize import minimize
 import pandas as pd
 
-sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
+#sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
+sys.path.append("C:/Users/raque/OneDrive/Documentos/GitHub") #Notebook
 #sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
+
 
 from src.pyCRT import PCRT  
 
 # Caminho base para os arquivos do projeto
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
-base_path="C:/Users/Fotobio/Desktop/Estudo_ElasticidadePele"
-folder_name = "DespolarizadoP3"
-video_name="v6.mp4"
+base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DespolarizadoP5"
+
+#base_path="C:/Users/Fotobio/Desktop/Estudo_ElasticidadePele"
+folder_name = "teste1"
+video_name="v7.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 roi_width = 80 
 roi_height = 80

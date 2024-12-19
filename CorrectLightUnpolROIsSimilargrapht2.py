@@ -13,23 +13,32 @@ import pandas as pd
 import numpy as np
 
 
-sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
+#sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
 #sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
+sys.path.append("C:/Users/raque/OneDrive/Documentos/GitHub/pyCRT")
 
 from src.pyCRT import PCRT  
 
 # Caminho base para os arquivos do projeto
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
 #base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
-base_path="C:/Users/Fotobio/Documents/GitHub"
+#base_path="C:/Users/Fotobio/Documents/GitHub"
 #folder_name = "teste1"
-folder_name="CorrectLightUnpol"
+#folder_name="CorrectLightUnpol"
 #video_name="v5.mp4"
 #video_name = "SeiyLedDesp4.mp4"
 #video_name = "NatanLedDesp6.mp4"
 #video_name ="SeiyLedPol6.mp4"
-video_name="NatanledPol5.mp4"
+#video_name="NatanledPol5.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
+
+
+base_path="C:/Users/raque/OneDrive/Documentos/GitHub"
+folder_name = "CorrectLightUnpol"
+#video_name="v7.mp4"
+video_name ="SeiyLedDesp4.mp4"
+
+
 roi_width = 80 
 roi_height = 80
 num_rois = 200  # Número de ROIs a serem criadas
@@ -337,14 +346,20 @@ fps = cap.get(cv.CAP_PROP_FPS)
 #roi1=(553, 113, 91, 88) #v7 com resize
 #roi1=(41, 287, 106, 83) #v6
 
-select_rois()
+#select_rois()
+
+""" 
+
 
 #roi1= (1091, 623, 188, 181) #v5
-#roi1=(1121, 222, 154, 154) #v7 original
-#roi2=(1810, 9, 41, 93)
-#roi3=(43, 22, 94, 82)
-#roi4=(1794, 744, 76, 84)
+roi1=(1121, 222, 154, 154) #v7 original
+roi2=(1810, 9, 41, 93)
+roi3=(43, 22, 94, 82)
+roi4=(1794, 744, 76, 84)
 #roi5=(453, 199, 84, 82)
+"""
+
+
 
 # rois do video do Seyi Despolarizado
 #roi1= (545, 247, 155, 151)
@@ -353,10 +368,10 @@ select_rois()
 #roi4=(1317, 873, 53, 80)
 
 # rois do video do Seyi Despolarizado teste2
-#roi1=(523, 246, 180, 147)
-#roi2=(667, 953, 46, 51)
-#roi3=(1004, 949, 51, 52)
-#roi4=(996, 677, 51, 56)
+roi1=(523, 246, 180, 147)
+roi2=(667, 953, 46, 51)
+roi3=(1004, 949, 51, 52)
+roi4=(996, 677, 51, 56)
 
 # rois do video do Seyi Polarizado
 #roi1=(594, 183, 124, 131)
@@ -430,16 +445,16 @@ print(f"a={a} b={b} gamma={gamma}")
 #ROICorrigida = np.array(RoiGreen1) 
 time_stamps=np.array(time_stamps)
 
-outputImageGraph = f"CasoFototipoII.png"
-plot_graph_curves(RoiGreen1, ROICorrigida,outputImageGraph)
+#outputImageGraph = f"CasoFototipoII.png"
+#plot_graph_curves(RoiGreen1, ROICorrigida,outputImageGraph)
 
-plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROICorrigida, folder_name)
+#plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROICorrigida, folder_name)
 
-"""
+
 
 
 max_index = np.argmax(ROICorrigida)
-shift_frame = 1
+shift_frame = 0
 max_index_shifted = min(max_index + shift_frame, len(ROICorrigida))
 
 timeStampsShiftFrame=time_stamps[max_index_shifted:]
@@ -452,7 +467,7 @@ ratiosbC = ROICorrigidaShiftFrame
 ratiosC=np.column_stack((ratiosrC,ratiosgC,ratiosbC))
 pcrtComp = PCRT(timeStampsShiftFrame, ratiosC,exclusionMethod='best fit',exclusionCriteria=999)
 outputFilePCRTRGB = f"pCRTDeslocadoRGB{shift_frame}{video_name}.png"
-pcrtComp.showAvgIntensPlot()
+#pcrtComp.showAvgIntensPlot()
 pcrtComp.showPCRTPlot()
 outputFilePCRT = f"pCRTDeslocado{shift_frame}{video_name}.png"
 pcrtComp.savePCRTPlot(outputFilePCRT)
@@ -461,6 +476,10 @@ pcrtComp.savePCRTPlot(outputFilePCRT)
 
 #print(f"a= {a} b = {b} gamma = {gamma}")
 #plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROI4Corrigida, folder_name)
+
+"""
+
+
 
 
 
