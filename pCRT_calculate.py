@@ -67,13 +67,20 @@ pcrt.showPCRTPlot()
 
 
 '''
+base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DespolarizadoP5"
+folder_name = "teste1"
+#video_name="corrected_v7_gamma=1.mp4"
+#video_name="raqueltestecasa.mp4"
+video_name="v7.mp4"
 
-output_video_name = "raqueltestecasa.mp4"
-output_video_path = os.path.join(base_path, folder_name, output_video_name)
-roi= (698, 346, 375, 376)
-pcrt = PCRT.fromVideoFile(output_video_path, roi=roi, displayVideo=False, exclusionMethod='best fit', exclusionCriteria=9999,fromTime=11.5)
+
+#output_video_name = "raqueltestecasa.mp4"
+output_video_path = os.path.join(base_path, folder_name, video_name)
+#roi= (698, 346, 375, 376)
+roi=(1121, 222, 154, 154) 
+pcrt = PCRT.fromVideoFile(output_video_path, roi=roi, displayVideo=False, exclusionMethod='best fit', exclusionCriteria=9999)
 pcrt.showAvgIntensPlot()
 pcrt.showPCRTPlot()
-outputFilePCRT = f"{output_video_name}.png"
+outputFilePCRT = f"{video_name}.png"
 pcrt.savePCRTPlot(outputFilePCRT)
 
