@@ -9,19 +9,18 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 from scipy.optimize import minimize
 import pandas as pd
-import cv2
 import numpy as np
 
 
-#sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
+sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
 #sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
-sys.path.append("C:/Users/raque/OneDrive/Documentos/GitHub/pyCRT")
+#sys.path.append("C:/Users/raque/OneDrive/Documentos/GitHub/pyCRT") # note
 
 from src.pyCRT import PCRT  
 
 # Caminho base para os arquivos do projeto
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
-#base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
+base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
 #base_path="C:/Users/Fotobio/Documents/GitHub"
 #folder_name = "teste1"
 #folder_name="CorrectLightUnpol"
@@ -33,7 +32,7 @@ from src.pyCRT import PCRT
 #video_name = "corrected_v7_gamma=1.mp4"
 
 
-base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DespolarizadoP5"
+#base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DespolarizadoP5" # note
 folder_name = "teste1"
 #video_name="corrected_v7_gamma=1.mp4"
 #video_name="raqueltestecasa.mp4"
@@ -46,7 +45,9 @@ roi_height = 80
 num_rois = 200  # Número de ROIs a serem criadas
 #gamma = 1.53
 
-def plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps, RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4, ROI4Corrigida, folder_name):
+def plot_image_and_ratios(frames,roi1, roi2, roi3, roi4, time_stamps,time_stamps_RoiGreen2,time_stamps_RoiGreen3,time_stamps_RoiGreen4, RoiGreen1_selected,RoiGreen2_aligned, RoiGreen3_aligned,RoiGreen4_aligned, folder_name):
+
+#def plot_image_and_ratios(frames, roi1, roi2, roi3, roi4, time_stamps, RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4, folder_name):
     # Extrair coordenadas das ROIs
     x_roi1, y_roi1, w_roi1, h_roi1 = roi1
     x_i, y_i, w_i, h_i = roi2
@@ -72,28 +73,28 @@ def plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stam
     axs[0].text(x_k + w_k / 2, y_k + h_k / 2, f"4", color='orange', ha='center', va='center', fontsize=8, weight='bold')
 
     # Subplot (4, 2, 2) - ROI 1
-    axs[1].plot(time_stamps, RoiGreen1, label="ROI 1", color='green')
+    axs[1].plot(time_stamps, RoiGreen1_selected, label="ROI 1", color='green')
     #axs[1].set_xlabel('Tempo (s)')
     #axs[1].set_ylim(100, 255)
     axs[1].set_ylabel('Intensidade do Canal Verde')
     axs[1].legend()
 
     # Subplot (4, 2, 4) - ROI 2
-    axs[3].plot(time_stamps, RoiGreen2, label="ROI 2", color='blue')
+    axs[3].plot(time_stamps_RoiGreen2, RoiGreen2_aligned, label="ROI 2", color='blue')
     #axs[3].set_xlabel('Tempo (s)')
     #axs[3].set_ylim(100, 255)
     axs[3].set_ylabel('Intensidade do Canal Verde')
     axs[3].legend()
 
     # Subplot (4, 2, 6) - ROI 3
-    axs[5].plot(time_stamps, RoiGreen3, label="ROI 3", color='red')
+    axs[5].plot(time_stamps_RoiGreen3, RoiGreen3_aligned, label="ROI 3", color='red')
     #axs[5].set_xlabel('Tempo (s)')
     #axs[5].set_ylim(100, 255)
     axs[5].set_ylabel('Intensidade do Canal Verde')
     axs[5].legend()
 
     # Subplot (4, 2, 8) - ROI corrigida
-    axs[7].plot(time_stamps, RoiGreen4, label="ROI 4", color='orange')
+    axs[7].plot(time_stamps_RoiGreen4, RoiGreen4_aligned, label="ROI 4", color='orange')
     axs[7].set_xlabel('Tempo (s)')
     axs[7].set_ylabel('Intensidade do Canal Verde')
     axs[7].legend()
@@ -105,8 +106,8 @@ def plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stam
 
     # Ajustar layout e salvar
     plt.tight_layout()
-    output_filename = f"ROI={a:.2f}_b={b:.2f}_g={gamma:.2f}_{folder_name}.png"
-    plt.savefig(output_filename, dpi=600)
+    #output_filename = f"ROI={a:.2f}_b={b:.2f}_g={gamma:.2f}_{folder_name}.png"
+    #plt.savefig(output_filename, dpi=600)
     plt.show()
     plt.close()
 
@@ -159,8 +160,6 @@ def calculate_ratios(roi2, roi3):
     ratios = roi2_array / roi3_array
     print(ratios)
     return ratios.tolist() 
-
-
 
 
 
@@ -400,7 +399,7 @@ while True:
     
     
     # Extrai as ROIs e calcula a média do canal verde
-    roi1_frame = frame[int(roi1[1]):int(roi1[1] + roi1[3]), int(roi1[0]):int(roi1[0] + roi1[2])]
+    roi1_frame = frame[int(roi1[1]):int(roi1[1] + roi1[3]), int(roi1[0]):int(roi1[0] + roi1[2])] # ROI CRT
     roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
     roi3_frame = frame[int(roi3[1]):int(roi3[1] + roi3[3]), int(roi3[0]):int(roi3[0] + roi3[2])]
     roi4_frame = frame[int(roi4[1]):int(roi4[1] + roi4[3]), int(roi4[0]):int(roi4[0] + roi4[2])]  
@@ -410,20 +409,25 @@ while True:
     roiGray1 = cv.cvtColor(roi1_frame, cv.COLOR_BGR2GRAY)
     RoiGreen1.append(np.mean(roiGray1))
     
-    #roiGray2 = cv.cvtColor(roi2_frame, cv.COLOR_BGR2GRAY)
-    #RoiGreen2.append(np.mean(roiGray2))
+    roiGray2 = cv.cvtColor(roi2_frame, cv.COLOR_BGR2GRAY)
+    RoiGreen2.append(np.mean(roiGray2))
     
+    # ROI fora 
     roiGray3 = cv.cvtColor(roi3_frame, cv.COLOR_BGR2GRAY)
     RoiGreen3.append(np.mean(roiGray3))
+
+    # ROI fora 
+    roiGray4 = cv.cvtColor(roi4_frame, cv.COLOR_BGR2GRAY)
+    RoiGreen4.append(np.mean(roiGray4))
     
 
-
+    # ROI fora 
     
     #
     #RoiGreen1.append(np.mean(roi1_frame[:, :, 1]))
-    RoiGreen2.append(np.mean(roi2_frame[:, :, 1]))
+    #RoiGreen2.append(np.mean(roi2_frame[:, :, 1]))
     #RoiGreen3.append(np.mean(roi3_frame[:, :, 1]))
-    RoiGreen4.append(np.mean(roi4_frame[:, :, 1]))   
+    #RoiGreen4.append(np.mean(roi4_frame[:, :, 1]))   
     #RoiGreen5.append(np.mean(roi5_frame[:, :, 1]))    
 
 
@@ -433,47 +437,73 @@ while True:
 cap.release()
 
 
-#for roi_pair in close_to_one_ratios.keys():
-    # Extrai os índices das ROIs da chave
-#    i, j = map(lambda x: int(x.split('/')[0][3:]) - 1, roi_pair.split('/'))
-
-
-   
-#a, b, gamma,adjusted_ratio= find_best_a_b(all_green_rois[i] ,all_green_rois[j])
-#a, b, gamma, adjusted_ratio= find_best_a_b(RoiGreen2,RoiGreen3)
-#a, b, gamma, adjusted_ratio= find_best_gamma(RoiGreen5,RoiGreen4)
-
-
-#ROICorrigida = (a + b * (RoiGreen1 ** gamma)) / (a + b * (RoiGreen3 ** gamma))
-
-"""
-# branco 
-RoiGreen1Corrigido=(a + b * (RoiGreen1 ** gamma))
-RoiGreen2Corrigido=(a + b * (RoiGreen2 ** gamma))
-RoiGreen3Corrigido = (a + b* ( RoiGreen3 **gamma))
-RoiGreen4Corrigido = (a + b * (RoiGreen4 **gamma))
-RoiGrayCorrigido =(a + b * (RoiGray**gamma))
-"""
-
 
 
 RoiGreen1=np.array(RoiGreen1)
 RoiGreen2=np.array(RoiGreen2)
 RoiGreen3=np.array(RoiGreen3)
+RoiGreen4=np.array(RoiGreen4)
 
-#
-#branco=np.mean(RoiGreen2Corrigido[400:])
+# ponto B de máxima intensidade 
+max_index = np.argmax(RoiGreen1)
+#print(max_index)
 
-#ruido 
-meanRatiosRoi3 = np.mean(RoiGreen3[248:250])
-ruido=(RoiGreen3/meanRatiosRoi3)
+# função ganho 
+#fGanho=RoiGreen2/RoiGreen2[max_index]
+#print(fGanho)
 
-#sinal
+# função ganho com a ROI2 deslocada - depois da retirada do dedo  
+max_index = np.argmax(RoiGreen1[300:])
+print(max_index)
 
-meanRatiosRoi2 = np.mean(RoiGreen2[248:250])
-RoiGreen2Corrigido=(RoiGreen2/meanRatiosRoi2)
+print(RoiGreen2[max_index+300])
+fGanho=RoiGreen2/RoiGreen2[max_index+300]
 
-SinalFinal=RoiGreen2Corrigido/ruido
+# função ganho aplicado na ROI 1 
+SinalFinal=RoiGreen1/fGanho
+
+maxindex = np.argmax(RoiGreen1)  # Índice com maior intensidade em RoiGreen1
+final_index = min(maxindex + 300, len(RoiGreen1))  # Garantir que não ultrapassa o comprimento da lista
+
+# Selecionar apenas os valores relevantes
+RoiGreen1_selected = RoiGreen1[maxindex:final_index]
+RoiGreen2_selected = RoiGreen2[maxindex:final_index]
+RoiGreen3_selected = RoiGreen3[maxindex:final_index]
+RoiGreen4_selected = RoiGreen4[maxindex:final_index]
+time_stamps = time_stamps[maxindex:final_index]
+
+
+
+
+def align_curve_from_peak(curve):
+    # Encontra o índice do pico máximo
+    peak_index = np.argmax(curve)
+    
+    # Retorna a curva a partir do pico máximo
+    return curve[peak_index:]
+
+def adjust_time_stamps_from_peak(curve, original_time_stamps):
+    peak_index = np.argmax(curve)
+    
+    # Ajusta os timestamps para começar a partir do pico máximo
+    adjusted_time_stamps = original_time_stamps[peak_index:]
+    
+    return adjusted_time_stamps
+
+
+# Alinha as outras curvas com base no pico de RoiGreen1
+RoiGreen2_aligned = align_curve_from_peak(RoiGreen2_selected)
+RoiGreen3_aligned = align_curve_from_peak(RoiGreen3_selected)
+RoiGreen4_aligned = align_curve_from_peak(RoiGreen4_selected)
+
+# Ajusta os timestamps a partir de seus picos máximos
+time_stamps_RoiGreen2 = adjust_time_stamps_from_peak(RoiGreen2_selected, time_stamps)
+time_stamps_RoiGreen3 = adjust_time_stamps_from_peak(RoiGreen3_selected, time_stamps)
+time_stamps_RoiGreen4 = adjust_time_stamps_from_peak(RoiGreen4_selected, time_stamps)
+
+
+
+
 
 #plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps, RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4, RoiGreen1Corrigido, folder_name)
 
@@ -488,10 +518,10 @@ SinalFinal=RoiGreen2Corrigido/ruido
 
 #print(f"a={a} b={b} gamma={gamma}")
 #ROICorrigida = np.array(RoiGreen1) 
-time_stamps=np.array(time_stamps)
+#time_stamps=np.array(time_stamps)
 
-outputImageGraph = f"TesteGray{folder_name}.png"
-plot_graph_curves(RoiGreen2, RoiGreen2Corrigido,SinalFinal,outputImageGraph)
+#outputImageGraph = f"TesteGrayFuncaoGanho{folder_name}.png"
+#plot_graph_curves(RoiGreen2, fGanho, SinalFinal, outputImageGraph)
 
 
 def apply_fourier_transform(time_stamps, roi_data, cutoff_frequency=None):
@@ -587,11 +617,11 @@ def analyze_roi_with_fourier(RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4, time_st
 
 
 ######################################################
-#plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROICorrigida, folder_name)
+plot_image_and_ratios(frames,roi1, roi2, roi3, roi4, time_stamps,time_stamps_RoiGreen2,time_stamps_RoiGreen3,time_stamps_RoiGreen4, RoiGreen1_selected,RoiGreen2_aligned, RoiGreen3_aligned,RoiGreen4_aligned, folder_name)
 
 
 
-
+"""
 
 max_index = np.argmax(SinalFinal)
 shift_frame = 0
@@ -611,6 +641,8 @@ outputFilePCRTRGB = f"pCRTDeslocadoRGB{shift_frame}{video_name}.png"
 pcrtComp.showPCRTPlot()
 outputFilePCRT = f"pCRTDeslocado{shift_frame}{video_name}.png"
 pcrtComp.savePCRTPlot(outputFilePCRT)
+"""
+
 
 
 
