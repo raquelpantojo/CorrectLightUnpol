@@ -12,16 +12,19 @@ import pandas as pd
 import numpy as np
 
 
-sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
+#sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
 #sys.path.append("C:/Users/RaquelPantojo/Documents/GitHub/pyCRT") # PC lab
-#sys.path.append("C:/Users/raque/OneDrive/Documentos/GitHub/pyCRT") # note
+sys.path.append("C:/Users/raque/OneDrive/Documentos/GitHub/pyCRT") # note
 
 from src.pyCRT import PCRT  
 
 # Caminho base para os arquivos do projeto
+
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
-base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
+#base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"#PC casa 
 #base_path="C:/Users/Fotobio/Documents/GitHub"
+base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DespolarizadoP5" # note
+
 #folder_name = "teste1"
 #folder_name="CorrectLightUnpol"
 #video_name="v5.mp4"
@@ -32,7 +35,7 @@ base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"
 #video_name = "corrected_v7_gamma=1.mp4"
 
 
-#base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DespolarizadoP5" # note
+
 folder_name = "teste1"
 #video_name="corrected_v7_gamma=1.mp4"
 #video_name="raqueltestecasa.mp4"
@@ -158,7 +161,7 @@ def calculate_ratios(roi2, roi3):
     roi3_array = np.array(roi3)
     
     ratios = roi2_array / roi3_array
-    print(ratios)
+    #print(ratios)
     return ratios.tolist() 
 
 
@@ -454,9 +457,9 @@ max_index = np.argmax(RoiGreen1)
 
 # função ganho com a ROI2 deslocada - depois da retirada do dedo  
 max_index = np.argmax(RoiGreen1[300:])
-print(max_index)
+#print(max_index)
 
-print(RoiGreen2[max_index+300])
+#print(RoiGreen2[max_index+300])
 fGanho=RoiGreen2/RoiGreen2[max_index+300]
 
 # função ganho aplicado na ROI 1 
@@ -617,7 +620,7 @@ def analyze_roi_with_fourier(RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4, time_st
 
 
 ######################################################
-plot_image_and_ratios(frames,roi1, roi2, roi3, roi4, time_stamps,time_stamps_RoiGreen2,time_stamps_RoiGreen3,time_stamps_RoiGreen4, RoiGreen1_selected,RoiGreen2_aligned, RoiGreen3_aligned,RoiGreen4_aligned, folder_name)
+#plot_image_and_ratios(frames,roi1, roi2, roi3, roi4, time_stamps,time_stamps_RoiGreen2,time_stamps_RoiGreen3,time_stamps_RoiGreen4, RoiGreen1_selected,RoiGreen2_aligned, RoiGreen3_aligned,RoiGreen4_aligned, folder_name)
 
 
 
@@ -696,3 +699,108 @@ print(f"Os dados foram salvos no arquivo {excel_filename}")
 
 
 """
+##### histograma
+
+
+def histogram(video_path, roi1, roi2, roi3, roi4,output_image_path):
+    # Tenta abrir o vídeo
+    cap = cv.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("Erro ao abrir o vídeo.")
+        sys.exit(1)
+
+    # Lê os frames 10 e 400
+    cap.set(cv.CAP_PROP_POS_FRAMES, 10)
+    ret, frame_10 = cap.read()
+    if not ret:
+        print("Não foi possível ler o frame 10.")
+        sys.exit(1)
+
+    cap.set(cv.CAP_PROP_POS_FRAMES, 400)
+    ret, frame_400 = cap.read()
+    if not ret:
+        print("Não foi possível ler o frame 400.")
+        sys.exit(1)
+
+    # Extrai as ROIs para cada frame
+    roi_10_1 = frame_10[roi1[1]:roi1[1]+roi1[3], roi1[0]:roi1[0]+roi1[2]]
+    roi_10_2 = frame_10[roi2[1]:roi2[1]+roi2[3], roi2[0]:roi2[0]+roi2[2]]
+    roi_10_3 = frame_10[roi3[1]:roi3[1]+roi3[3], roi3[0]:roi3[0]+roi3[2]]
+    roi_10_4 = frame_10[roi4[1]:roi4[1]+roi4[3], roi4[0]:roi4[0]+roi4[2]]
+
+    roi_400_1 = frame_400[roi1[1]:roi1[1]+roi1[3], roi1[0]:roi1[0]+roi1[2]]
+    roi_400_2 = frame_400[roi2[1]:roi2[1]+roi2[3], roi2[0]:roi2[0]+roi2[2]]
+    roi_400_3 = frame_400[roi3[1]:roi3[1]+roi3[3], roi3[0]:roi3[0]+roi3[2]]
+    roi_400_4 = frame_400[roi4[1]:roi4[1]+roi4[3], roi4[0]:roi4[0]+roi4[2]]
+
+    # Converte as ROIs para escala de cinza
+    gray_roi_10_1 = cv.cvtColor(roi_10_1, cv.COLOR_BGR2GRAY)
+    gray_roi_10_2 = cv.cvtColor(roi_10_2, cv.COLOR_BGR2GRAY)
+    gray_roi_10_3 = cv.cvtColor(roi_10_3, cv.COLOR_BGR2GRAY)
+    gray_roi_10_4 = cv.cvtColor(roi_10_4, cv.COLOR_BGR2GRAY)
+
+    gray_roi_400_1 = cv.cvtColor(roi_400_1, cv.COLOR_BGR2GRAY)
+    gray_roi_400_2 = cv.cvtColor(roi_400_2, cv.COLOR_BGR2GRAY)
+    gray_roi_400_3 = cv.cvtColor(roi_400_3, cv.COLOR_BGR2GRAY)
+    gray_roi_400_4 = cv.cvtColor(roi_400_4, cv.COLOR_BGR2GRAY)
+
+    # Calcula os histogramas para as ROIs em escala de cinza
+    hist_10_1 = cv.calcHist([gray_roi_10_1], [0], None, [256], [0, 256])
+    hist_10_2 = cv.calcHist([gray_roi_10_2], [0], None, [256], [0, 256])
+    hist_10_3 = cv.calcHist([gray_roi_10_3], [0], None, [256], [0, 256])
+    hist_10_4 = cv.calcHist([gray_roi_10_4], [0], None, [256], [0, 256])
+
+    hist_400_1 = cv.calcHist([gray_roi_400_1], [0], None, [256], [0, 256])
+    hist_400_2 = cv.calcHist([gray_roi_400_2], [0], None, [256], [0, 256])
+    hist_400_3 = cv.calcHist([gray_roi_400_3], [0], None, [256], [0, 256])
+    hist_400_4 = cv.calcHist([gray_roi_400_4], [0], None, [256], [0, 256])
+
+    # Plota os histogramas com sobreposição
+    plt.figure(figsize=(12, 6))
+
+    plt.subplot(221)
+    plt.title('Histograma ROI 1')
+    plt.plot(hist_10_1, label='Frame 10')
+    plt.plot(hist_400_1, label='Frame 400')
+    plt.xlabel('Intensidade')
+    plt.ylabel('Frequência')
+    plt.legend()
+
+    plt.subplot(222)
+    plt.title('Histograma ROI 2')
+    plt.plot(hist_10_2, label='Frame 10')
+    plt.plot(hist_400_2, label='Frame 400')
+    plt.xlabel('Intensidade')
+    plt.ylabel('Frequência')
+    plt.legend()
+
+    plt.subplot(223)
+    plt.title('Histograma ROI 3')
+    plt.plot(hist_10_3, label='Frame 10')
+    plt.plot(hist_400_3, label='Frame 400')
+    plt.xlabel('Intensidade')
+    plt.ylabel('Frequência')
+    plt.legend()
+
+    plt.subplot(224)
+    plt.title('Histograma ROI 4')
+    plt.plot(hist_10_4, label='Frame 10')
+    plt.plot(hist_400_4, label='Frame 400')
+    plt.xlabel('Intensidade')
+    plt.ylabel('Frequência')
+    plt.legend()
+
+    plt.tight_layout()
+    
+    
+    plt.savefig(output_image_path, bbox_inches='tight', dpi=300)
+    
+    plt.show()
+    cap.release()
+
+
+
+
+# função para calcular o histograma de uma imagem
+output_image_path = f"FigureHistogram.png"
+histogram(video_path, roi1, roi2, roi3, roi4,output_image_path)
