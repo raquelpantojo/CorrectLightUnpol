@@ -702,7 +702,7 @@ print(f"Os dados foram salvos no arquivo {excel_filename}")
 ##### histograma
 
 
-def histogram(video_path, roi1, roi2, roi3, roi4,output_image_path):
+def histogram(video_path, roi1, roi2, roi3, roi4, firstFrame,lastFrame, output_image_path):
     # Tenta abrir o vídeo
     cap = cv.VideoCapture(video_path)
     if not cap.isOpened():
@@ -710,13 +710,13 @@ def histogram(video_path, roi1, roi2, roi3, roi4,output_image_path):
         sys.exit(1)
 
     # Lê os frames 10 e 400
-    cap.set(cv.CAP_PROP_POS_FRAMES, 10)
+    cap.set(cv.CAP_PROP_POS_FRAMES, firstFrame)
     ret, frame_10 = cap.read()
     if not ret:
         print("Não foi possível ler o frame 10.")
         sys.exit(1)
 
-    cap.set(cv.CAP_PROP_POS_FRAMES, 400)
+    cap.set(cv.CAP_PROP_POS_FRAMES, lastFrame)
     ret, frame_400 = cap.read()
     if not ret:
         print("Não foi possível ler o frame 400.")
@@ -803,4 +803,4 @@ def histogram(video_path, roi1, roi2, roi3, roi4,output_image_path):
 
 # função para calcular o histograma de uma imagem
 output_image_path = f"FigureHistogram.png"
-histogram(video_path, roi1, roi2, roi3, roi4,output_image_path)
+histogram(video_path, roi1, roi2, roi3, roi4,10, 110, output_image_path)
