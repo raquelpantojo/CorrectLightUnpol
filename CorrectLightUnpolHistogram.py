@@ -1,5 +1,4 @@
-# Teste usando ROIS silimares
-# Teste com 4 ROis 
+# atualização dia 06/01/2024 - implemntação do histograma e derivada da função
 
 import cv2 as cv
 import numpy as np
@@ -7,9 +6,12 @@ import os
 import sys
 import matplotlib.pyplot as plt
 from itertools import combinations
-from scipy.optimize import minimize
+
 import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
+
+from scipy.optimize import minimize
+from scipy.signal import argrelextrema
 
 
 #sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
@@ -307,7 +309,7 @@ def select_rois():
   
 
 
-############################Inicalizando o programa####################################
+############################ Inicalizando o programa ####################################
 # Verifica o caminho do vídeo
 video_path = os.path.join(base_path, folder_name, video_name)
 if not os.path.exists(video_path):
@@ -322,27 +324,13 @@ if not cap.isOpened():
 
 
 # Variáveis para as ROIs
-roi1 = None
-roi2 = None
-roi3 = None
-roi4 = None
-roi5 = None
+#roi1, roi2, roi3, roi4, roi5 = None
+
 
 frame_count = 0
 fps = cap.get(cv.CAP_PROP_FPS)
 
 
-# Selecionar as ROIs
-
-#roi1=(553, 113, 91, 88) #v7 com resize
-#roi1=(41, 287, 106, 83) #v6
-
-#select_rois()
-
- 
-
-
-#roi1= (1091, 623, 188, 181) #v5
 roi1=(1121, 222, 154, 154) #v7 original
 roi2=(1810, 9, 41, 93)
 roi3=(43, 22, 94, 82)
@@ -350,40 +338,6 @@ roi4=(1794, 744, 76, 84)
 roi5=(453, 199, 84, 82)
 
 
-
-
-# rois do video do Seyi Despolarizado
-#roi1= (545, 247, 155, 151)
-#roi2= (1320, 622, 72, 80)
-#roi3=(834, 582, 170, 42)
-#roi4=(1317, 873, 53, 80)
-
-"""
-# rois do video do Seyi Despolarizado teste2
-roi1=(523, 246, 180, 147)
-roi2=(667, 953, 46, 51)
-roi3=(1004, 949, 51, 52)
-roi4=(996, 677, 51, 56)
-"""
-
-# rois do video do Seyi Polarizado
-#roi1=(594, 183, 124, 131)
-#roi2=(555, 799, 51, 48)
-#roi3=(993, 926, 38, 48)
-#roi4=(1088, 775, 43, 86)
-
-
-# rois do video do Natan depsolarizado
-#roi1= (457, 571, 165, 215)
-#roi2= (209, 81, 102, 97)
-#roi3=(694, 139, 83, 73)
-#roi4=(1409, 22, 121, 70)
-
-# rois do video do Natan polarizado
-#roi1= 
-#roi2= 
-#roi3=
-#roi4=
 
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
@@ -713,13 +667,13 @@ def histogram(video_path, roi1, roi2, roi3, roi4, firstFrame,lastFrame, output_i
     cap.set(cv.CAP_PROP_POS_FRAMES, firstFrame)
     ret, frame_10 = cap.read()
     if not ret:
-        print("Não foi possível ler o frame 10.")
+        print(f"Não foi possível ler o frame {firstFrame}.")
         sys.exit(1)
 
     cap.set(cv.CAP_PROP_POS_FRAMES, lastFrame)
     ret, frame_400 = cap.read()
     if not ret:
-        print("Não foi possível ler o frame 400.")
+        print(f"Não foi possível ler o frame {lastFrame}.")
         sys.exit(1)
 
     # Extrai as ROIs para cada frame
@@ -760,32 +714,32 @@ def histogram(video_path, roi1, roi2, roi3, roi4, firstFrame,lastFrame, output_i
 
     plt.subplot(221)
     plt.title('Histograma ROI 1')
-    plt.plot(hist_10_1, label='Frame 10')
-    plt.plot(hist_400_1, label='Frame 400')
+    plt.plot(hist_10_1, label=f'Frame{firstFrame}')
+    plt.plot(hist_400_1, label=f'Frame{lastFrame}')
     plt.xlabel('Intensidade')
     plt.ylabel('Frequência')
     plt.legend()
 
     plt.subplot(222)
     plt.title('Histograma ROI 2')
-    plt.plot(hist_10_2, label='Frame 10')
-    plt.plot(hist_400_2, label='Frame 400')
+    plt.plot(hist_10_2, label=f'Frame{firstFrame}')
+    plt.plot(hist_400_2, label=f'Frame{lastFrame}')
     plt.xlabel('Intensidade')
     plt.ylabel('Frequência')
     plt.legend()
 
     plt.subplot(223)
     plt.title('Histograma ROI 3')
-    plt.plot(hist_10_3, label='Frame 10')
-    plt.plot(hist_400_3, label='Frame 400')
+    plt.plot(hist_10_3, label=f'Frame{firstFrame}')
+    plt.plot(hist_400_3, label=f'Frame{lastFrame}')
     plt.xlabel('Intensidade')
     plt.ylabel('Frequência')
     plt.legend()
 
     plt.subplot(224)
     plt.title('Histograma ROI 4')
-    plt.plot(hist_10_4, label='Frame 10')
-    plt.plot(hist_400_4, label='Frame 400')
+    plt.plot(hist_10_4, label=f'Frame{firstFrame}')
+    plt.plot(hist_400_4, label=f'Frame{lastFrame}')
     plt.xlabel('Intensidade')
     plt.ylabel('Frequência')
     plt.legend()
@@ -801,6 +755,77 @@ def histogram(video_path, roi1, roi2, roi3, roi4, firstFrame,lastFrame, output_i
 
 
 
+def DerivadaDoSinal(sinal, time_stamps):
+    """
+    Calcula a derivada do sinal de CRT, identifica os picos positivos e negativos e plota 
+    tanto o sinal original quanto sua derivada com os picos máximos destacados.
+
+    :param sinal: Lista ou array contendo os valores do sinal.
+    :param dt: Intervalo de tempo entre os pontos do sinal (assumido como constante).
+    """
+    dt = time_stamps[1] - time_stamps[0] 
+    derivada = np.diff(sinal) / dt
+    
+  
+    t = np.arange(0, len(sinal) * dt, dt)
+    t_derivada = t[:-1]  
+    
+   
+    picosPositivos = argrelextrema(derivada, np.greater)[0]
+    picosNegativos = argrelextrema(derivada, np.less)[0]
+    
+    # Encontra o pico máximo positivo e o pico mínimo negativo
+    if len(picosPositivos) > 0:
+        maxPicoPositivo = picosPositivos[np.argmax(derivada[picosPositivos])]
+    else:
+        maxPicoPositivo = None 
+    
+    if len(picosNegativos) > 0:
+        maxPicoNegativo = picosNegativos[np.argmin(derivada[picosNegativos])]
+    else:
+        maxPicoNegativo = None 
+    
+   
+    plt.subplot(211)
+    plt.plot(t, sinal)
+    plt.title('Sinal Original')
+    plt.xlabel('Tempo')
+    plt.ylabel('Amplitude')
+   
+    plt.subplot(212)
+    plt.plot(t_derivada, derivada, label='Derivada')
+    plt.title('Derivada do Sinal')
+    plt.xlabel('Tempo')
+    plt.ylabel('Derivada da Amplitude')
+    
+   
+    if maxPicoPositivo is not None:
+        plt.plot(t_derivada[maxPicoPositivo], derivada[maxPicoPositivo], 'ro', label='Máximo Pico Positivo')
+    
+    if maxPicoNegativo is not None:
+        plt.plot(t_derivada[maxPicoNegativo], derivada[maxPicoNegativo], 'go', label='Máximo Pico Negativo')
+    
+    plt.legend()  
+    plt.tight_layout()
+    plt.show()
+    
+    return maxPicoPositivo, maxPicoNegativo
+
+
+
+    
+ 
+    
+# os picos positivos e negativos da derivada do sinal de CRT
+# o pico positivo é o momento que se tem a retirado do dedo
+# o pico negativo é o momento que se aplica a compressão
+maxPicoPositivo, maxPicoNegativo = DerivadaDoSinal(RoiGreen1,time_stamps)
+
+
+firstFrame = 10
+lastFrame = maxPicoNegativo # ponto de retirada do dedo 
+
+###################### Histograna da imagem ####################
 # função para calcular o histograma de uma imagem
-output_image_path = f"FigureHistogram.png"
-histogram(video_path, roi1, roi2, roi3, roi4,10, 110, output_image_path)
+output_image_path = f"FigureHistogram{firstFrame}{lastFrame}.png"
+histogram(video_path, roi1, roi2, roi3, roi4, firstFrame, lastFrame, output_image_path)
