@@ -370,7 +370,7 @@ roi4=(996, 677, 51, 56)
 #roi4=(1088, 775, 43, 86)
 
 
-# rois do video do Natan depsolarizado
+# rois do video do Natan despolarizado
 #roi1= (457, 571, 165, 215)
 #roi2= (209, 81, 102, 97)
 #roi3=(694, 139, 83, 73)
