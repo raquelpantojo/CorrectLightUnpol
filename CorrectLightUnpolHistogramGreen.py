@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from scipy.optimize import minimize
-from scipy.signal import argrelextrema
+from scipy.signal import argrelextrema, butter, filtfilt
 
 
 #sys.path.append("C:/Users/Fotobio/Documents/GitHub/pyCRT") #PC casa 
@@ -22,24 +22,34 @@ from src.pyCRT import PCRT
 
 
 
-base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DadosExperimentoRugosoELiso" # note
-folder_name="LisoDespolarizadoP1"
-#video_name = "NatanLedDesp6.mp4"
+#base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DadosExperimentoRugosoELiso" # note
+base_path="C:/Users/raque/OneDrive/Documentos/GitHub" # note
+folder_name="CorrectLightUnpol"
+video_name = "NatanLedDesp6.mp4"
 #video_name = "EduLedDesp4.mp4"
 #video_name = "SeiyLedDesp4.mp4"
-video_name= "Desp1.mp4"
+#video_name = "SeiyLedPol6.mp4"
+#video_name= "Desp1.mp4"
+#video_name="v7.mp4"
 
 roi_width = 80 
 roi_height = 80
 num_rois = 200  # Número de ROIs a serem criadas
 
-roi1=(339, 855, 176, 137)
+#v7
+#roi1=(1121, 222, 154, 154)
+
+##video_name= "Desp1.mp4"
+#roi1=(339, 855, 176, 137)
 
 #Seyi Despolarizado
 #roi1=(523, 246, 180, 147)
 
-# rois do video do Natan despolarizado
-#roi1= (457, 571, 165, 215)
+#Seyi Polarizado
+#roi1=(594, 183, 124, 131)
+
+# Natan despolarizado
+roi1= (457, 571, 165, 215)
 
 #Edu Desp
 #roi1=(710, 121, 131, 150)
@@ -129,27 +139,35 @@ def plot_image_and_ratios(frames, best_combination, all_green_rois, time_stamps,
     plt.show()
     plt.close()
 
-def plot_graph_curves(time_stamps,RoiGreen, fganho,RoiGreen1Equ,outputImageGraph):
+def plot_graph_curves(time_stamps,RoiGreen, RoiGray,RoiGreen1Equ,RoiGray1Equ,outputImageGraph):
     
     plt.subplot(311)
-    plt.plot(time_stamps, RoiGreen, label=f"Canal Cinza ROI 1 ", color='darkgreen')
+    plt.plot(time_stamps, RoiGreen, label=f"Canal Verde ROI 1 ", color='darkgreen')
     plt.xlabel('Tempo (s)')
-    plt.ylabel('Intensidade do Canal Cinza')
+    plt.ylabel('Intensidade do Canal Verde')
     plt.legend()
 
-    plt.subplot(312)
-    plt.plot(time_stamps, fganho, label=f"Função Ganho", color='green')
+    plt.plot(time_stamps, RoiGray, label=f"Canal Cinza ROI 1", color='gray')
     plt.xlabel('Tempo (s)')
     plt.ylabel('Intensidade do Canal Cinza', fontsize="12")
     plt.legend()
     
-    plt.subplot(313)
-    plt.plot(time_stamps, RoiGreen1Equ, label=f"Equalização", color='green')
-    #plt.title(f"a={a:.2f}_b={b:.2f} $\gamma$={gamma:.2f}")
+    plt.subplot(312)
+    plt.plot(time_stamps, RoiGreen1Equ, label=f"Equalizado verde", color='green')
     plt.xlabel('Tempo (s)')
-    plt.ylabel('Intensidade do Canal ')
+    plt.ylabel('Intensidade do Canal Verde')
     plt.legend()
     plt.tight_layout()
+    
+    plt.subplot(313)
+    plt.plot(time_stamps, RoiGray1Equ, label=f"Equalizado Cinza", color='green')
+    #plt.title(f"a={a:.2f}_b={b:.2f} $\gamma$={gamma:.2f}")
+    plt.xlabel('Tempo (s)')
+    plt.ylabel('Intensidade do Canal Cinza')
+    plt.legend()
+    plt.tight_layout()
+    
+    
    #pastaSalvar= "C:/Users/Fotobio/Desktop/ResultadosAbgamma"
     plt.savefig(outputImageGraph, dpi=300)
     plt.show()
@@ -397,7 +415,7 @@ cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 #selectROI()
 
 # Listas para armazenar intensidades e timestamps
-RoiRed, RoiGreen, RoiBlue,Roi1, Roi2,Roi3,RoiGreen1Equ, time_stamps = [], [], [], [],[],[],[],[]
+RoiRed, RoiGreen, RoiBlue,Roi1, Roi2,Roi3,RoiGreen1Equ, EqualizadeGreenRoi1, EqualizedGrayRoi1,time_stamps = [], [], [], [],[],[],[],[],[],[]
 frame_count = 0
 # Processa o vídeo frame a frame para capturar os valores das ROIs
 while True:
@@ -420,11 +438,24 @@ while True:
     RoiGray2=cv.cvtColor(roi2_frame, cv.COLOR_BGR2GRAY)
     RoiGray3=cv.cvtColor(roi3_frame, cv.COLOR_BGR2GRAY)
     
-
+    EqualizadeGray=cv.equalizeHist(RoiGray1)
+    EqualizedGrayRoi1.append(np.mean(EqualizadeGray))
+  
     
     # Equalizando pelo histograma 
-    roiGray1Equalize = cv.equalizeHist(RoiGray1)
-    RoiGreen1Equ.append(np.mean(roiGray1Equalize))
+    # Equalizar o histograma do canal verde da ROI1
+    roi_green_channel = roi1_frame[:, :, 1]  # Extrair apenas o canal verde
+    roi_green_equalized = cv.equalizeHist(roi_green_channel)
+    
+    # Criar uma imagem BGR com o canal verde equalizado e manter os outros canais inalterados
+    roi_bgr_with_equalized_green = roi1_frame.copy()
+    roi_bgr_with_equalized_green[:, :, 1] = roi_green_equalized
+    
+   
+    EqualizadeGreenRoi1.append(np.mean(roi_bgr_with_equalized_green))  # Média do canal verde equalizado
+    
+
+
     
     Roi1.append(np.mean(RoiGray1))
     Roi2.append(np.mean(RoiGray2))
@@ -435,50 +466,62 @@ while True:
 
 cap.release()
 
-RoiGreen1 = np.array(Roi1)
-RoiGreen1Equ=np.array(RoiGreen1Equ)
+RoiGreen=np.array(RoiGreen)
+RoiGray1 = np.array(Roi1)
+EqualizadeGreenRoi1=np.array(EqualizadeGreenRoi1)
 RoiGreen2 = np.array(Roi2)
 RoiGreen3 = np.array(Roi3)
+EqualizedGrayRoi1=np.array(EqualizedGrayRoi1)
+
+# teste em usar um filtro butterWorth passsa baixa
+ordem = 2
+frequencia_de_corte = 0.1
+b, a = butter(ordem, frequencia_de_corte, btype='low', analog=False)
+EqualizedGrayRoi1_filtrado = filtfilt(b, a, EqualizedGrayRoi1)
+# não deu certo
+
 time_stamps = np.array(time_stamps)
 
 
 
-# ponto B de máxima intensidade 
-max_index = np.argmax(RoiGreen1Equ)
-#print(max_index)
-
-fGanho=RoiGreen3/RoiGreen2
-
-# função ganho aplicado na ROI 1 
-SinalFinal=RoiGreen1Equ/fGanho
 
 
-#outputImageGraph = f"TesteGrayFuncaoGanhoEqualizeHistogram{folder_name}.png"
-#plot_graph_curves(time_stamps,RoiGreen1, fGanho, RoiGreen1Equ, outputImageGraph)
+outputImageGraph = f"TesteVerdeEqualizeHistogram{folder_name}{video_name}.png"
+plot_graph_curves(time_stamps,RoiGreen, RoiGray1, EqualizadeGreenRoi1,EqualizedGrayRoi1_filtrado, outputImageGraph)
 
    
 
 #plot_image_and_ratios(frames, best_combination, all_green_rois, time_stamps, 
-#                         RoiGreen1, RoiGreen1Equ, folder_name, roi1)
+#                        RoiGreen1, RoiGreen1Equ, folder_name, roi1)
+
+
 
 
 
 maxPicoPositivo, maxPicoNegativo = DerivadaDoSinal(RoiGreen,time_stamps)
+print(maxPicoPositivo)
 tempoMaxPicoPositivo = time_stamps[maxPicoPositivo]
 
-ratiosrC = RoiGreen[max_index:]
-ratiosgC = RoiGreen[max_index:]
-ratiosbC = RoiGreen[max_index:]
+#ratiosrC = RoiGreen[max_index:]
+#ratiosgC = RoiGreen[max_index:]
+#ratiosbC = RoiGreen[max_index:]
+#time_stamps=time_stamps[max_index:]
 
-time_stamps=time_stamps[max_index:]
-
-ratiosC=np.column_stack((ratiosrC,ratiosgC,ratiosbC))
+ratiosC=np.column_stack((EqualizedGrayRoi1_filtrado,EqualizedGrayRoi1_filtrado,EqualizedGrayRoi1_filtrado))
 pcrtComp = PCRT(time_stamps, ratiosC,exclusionMethod='best fit',exclusionCriteria=9999,fromTime=tempoMaxPicoPositivo)
 
 pcrtComp.showPCRTPlot()
-outputFilePCRT = f"pCRT{video_name}.png"
+outputFilePCRT = f"pCRTEqualizadoVerde{video_name}.png"
 pcrtComp.savePCRTPlot(outputFilePCRT)
 print(pcrtComp)
+
+
+
+
+
+
+
+
 
 
 
