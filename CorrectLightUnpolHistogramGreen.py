@@ -507,11 +507,11 @@ tempoMaxPicoPositivo = time_stamps[maxPicoPositivo]
 #ratiosbC = RoiGreen[max_index:]
 #time_stamps=time_stamps[max_index:]
 
-ratiosC=np.column_stack((EqualizedGrayRoi1_filtrado,EqualizedGrayRoi1_filtrado,EqualizedGrayRoi1_filtrado))
+ratiosC=np.column_stack((EqualizedGrayRoi1,EqualizedGrayRoi1,EqualizedGrayRoi1))
 pcrtComp = PCRT(time_stamps, ratiosC,exclusionMethod='best fit',exclusionCriteria=9999,fromTime=tempoMaxPicoPositivo)
 
 pcrtComp.showPCRTPlot()
-outputFilePCRT = f"pCRTEqualizadoVerde{video_name}.png"
+outputFilePCRT = f"pCRTEqualizadoCinza{video_name}.png"
 pcrtComp.savePCRTPlot(outputFilePCRT)
 print(pcrtComp)
 
@@ -539,4 +539,3 @@ Keyword arguments:
 argument -- description
 Return: return_description
 """
-

@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from scipy.optimize import minimize
 from scipy.signal import argrelextrema
@@ -25,23 +24,24 @@ from src.pyCRT import PCRT
 #base_path = "C:/Users/RaquelPantojo/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"  # PC USP
 #base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"#PC casa 
 #base_path="C:/Users/Fotobio/Documents/GitHub"
-base_path="C:/Users/raque/OneDrive/Documentos/GitHub/CorrectLightUnpol/DespolarizadoP5" # note
+base_path="C:/Users/raque/OneDrive/Documentos/GitHub" # note
 
 #folder_name = "teste1"
 #folder_name="CorrectLightUnpol"
 #video_name="v5.mp4"
 #video_name = "SeiyLedDesp4.mp4"
-#video_name = "NatanLedDesp6.mp4"
+#
+video_name = "NatanLedDesp6.mp4"
 #video_name ="SeiyLedPol6.mp4"
 #video_name="NatanledPol5.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 
 
 
-folder_name = "teste1"
+folder_name = "CorrectLightUnpol"
 #video_name="corrected_v7_gamma=1.mp4"
 #video_name="raqueltestecasa.mp4"
-video_name="v7.mp4"
+#video_name="v7.mp4"
 #video_name ="SeiyLedDesp4.mp4"
 
 
@@ -331,12 +331,16 @@ frame_count = 0
 fps = cap.get(cv.CAP_PROP_FPS)
 
 
-roi1=(1121, 222, 154, 154) #v7 original
-roi2=(1810, 9, 41, 93)
-roi3=(43, 22, 94, 82)
-roi4=(1794, 744, 76, 84)
-roi5=(453, 199, 84, 82)
+#roi1=(1121, 222, 154, 154) #v7 original
+#roi2=(1810, 9, 41, 93)
+#roi3=(43, 22, 94, 82)
+#roi4=(1794, 744, 76, 84)
+#roi5=(453, 199, 84, 82)
 
+roi1= (457, 571, 165, 215)
+roi2= (209, 81, 102, 97)
+roi3=(694, 139, 83, 73)
+roi4=(1409, 22, 121, 70)
 
 
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
