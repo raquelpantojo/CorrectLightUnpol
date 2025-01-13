@@ -364,7 +364,6 @@ while True:
     roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
     roi3_frame = frame[int(roi3[1]):int(roi3[1] + roi3[3]), int(roi3[0]):int(roi3[0] + roi3[2])]
     roi4_frame = frame[int(roi4[1]):int(roi4[1] + roi4[3]), int(roi4[0]):int(roi4[0] + roi4[2])]  
-    #roi5_frame = frame[int(roi5[1]):int(roi5[1] + roi5[3]), int(roi5[0]):int(roi5[0] + roi5[2])] 
 
     # ROI Gray
     roiGray1 = cv.cvtColor(roi1_frame, cv.COLOR_BGR2GRAY)
@@ -381,16 +380,11 @@ while True:
     roiGray4 = cv.cvtColor(roi4_frame, cv.COLOR_BGR2GRAY)
     RoiGreen4.append(np.mean(roiGray4))
     
-
-    # ROI fora 
+    #YUV
+    roi1YUV = cv.cvtColor(roi1_frame, cv.COLOR_BGR2YUV)
+    roi1YUV.append(np.mean(roi1YUV[:,:,1]))
     
-    #
-    #RoiGreen1.append(np.mean(roi1_frame[:, :, 1]))
-    #RoiGreen2.append(np.mean(roi2_frame[:, :, 1]))
-    #RoiGreen3.append(np.mean(roi3_frame[:, :, 1]))
-    #RoiGreen4.append(np.mean(roi4_frame[:, :, 1]))   
-    #RoiGreen5.append(np.mean(roi5_frame[:, :, 1]))    
-
+    
 
     time_stamps.append(frame_count / fps)
     frame_count += 1
@@ -405,362 +399,21 @@ RoiGreen2=np.array(RoiGreen2)
 RoiGreen3=np.array(RoiGreen3)
 RoiGreen4=np.array(RoiGreen4)
 
-# ponto B de máxima intensidade 
-max_index = np.argmax(RoiGreen1)
-#print(max_index)
+roi1YUV = np.array(roi1YUV)
 
-# função ganho 
-#fGanho=RoiGreen2/RoiGreen2[max_index]
-#print(fGanho)
+time_stamps = np.array(time_stamps)
 
-# função ganho com a ROI2 deslocada - depois da retirada do dedo  
-#max_index = np.argmax(RoiGreen1[300:])
-#print(max_index)
 
-#print(RoiGreen2[max_index+300])
-#fGanho=RoiGreen2/RoiGreen2[max_index+300]
 
-# função ganho aplicado na ROI 1 
-#SinalFinal=RoiGreen1/fGanho
 
-maxindex = np.argmax(RoiGreen1)  # Índice com maior intensidade em RoiGreen1
-final_index = min(maxindex + 300, len(RoiGreen1))  # Garantir que não ultrapassa o comprimento da lista
 
-# Selecionar apenas os valores relevantes
-RoiGreen1_selected = RoiGreen1[maxindex:final_index]
-RoiGreen2_selected = RoiGreen2[maxindex:final_index]
-RoiGreen3_selected = RoiGreen3[maxindex:final_index]
-RoiGreen4_selected = RoiGreen4[maxindex:final_index]
-time_stamps = time_stamps[maxindex:final_index]
 
 
 
 
-def align_curve_from_peak(curve):
-    # Encontra o índice do pico máximo
-    peak_index = np.argmax(curve)
-    
-    # Retorna a curva a partir do pico máximo
-    return curve[peak_index:]
 
-def adjust_time_stamps_from_peak(curve, original_time_stamps):
-    peak_index = np.argmax(curve)
-    
-    # Ajusta os timestamps para começar a partir do pico máximo
-    adjusted_time_stamps = original_time_stamps[peak_index:]
-    
-    return adjusted_time_stamps
 
-
-# Alinha as outras curvas com base no pico de RoiGreen1
-RoiGreen2_aligned = align_curve_from_peak(RoiGreen2_selected)
-RoiGreen3_aligned = align_curve_from_peak(RoiGreen3_selected)
-RoiGreen4_aligned = align_curve_from_peak(RoiGreen4_selected)
-
-# Ajusta os timestamps a partir de seus picos máximos
-time_stamps_RoiGreen2 = adjust_time_stamps_from_peak(RoiGreen2_selected, time_stamps)
-time_stamps_RoiGreen3 = adjust_time_stamps_from_peak(RoiGreen3_selected, time_stamps)
-time_stamps_RoiGreen4 = adjust_time_stamps_from_peak(RoiGreen4_selected, time_stamps)
-
-
-
-
-
-#plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps, RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4, RoiGreen1Corrigido, folder_name)
-
-
-#(sinal - ruido)/branco
-#SinalFinal = (np.array(RoiGreen1)-np.array(RoiGreen3))/meanRatiosRoi1
-#SinalFinal = (np.array(RoiGreen1)-ruido)/meanRatiosRoi1
-#SinalFinal=((RoiGreen1-(-1*(np.array(RoiGreen4))))/np.array(RoiGreen2))
-#SinalFinal=(RoiGreen1Corrigido/RoiGreen3Corrigido)
-#SinalFinal=RoiGreen1Corrigido-(-1*RoiGreen4Corrigido)/branco
-#SinalFinal=RoiGreen1Corrigido/RoiGreen4Corrigido
-
-#print(f"a={a} b={b} gamma={gamma}")
-#ROICorrigida = np.array(RoiGreen1) 
-#time_stamps=np.array(time_stamps)
-
-#outputImageGraph = f"TesteGrayFuncaoGanho{folder_name}.png"
-#plot_graph_curves(RoiGreen2, fGanho, SinalFinal, outputImageGraph)
-
-
-def apply_fourier_transform(time_stamps, roi_data, cutoff_frequency=None):
-    """
-    Aplica a Transformada de Fourier (DFT) e filtra as frequências com base em um corte de frequência.
-    
-    Args:
-        time_stamps: Lista de timestamps (tempo em segundos).
-        roi_data: Dados da ROI (intensidade do canal verde ao longo do tempo).
-        cutoff_frequency: Frequência de corte para o filtro passa-baixa.
-        
-    Returns:
-        Sinal filtrado no domínio do tempo.
-    """
-    # Número de pontos no sinal
-    N = len(roi_data)
-    
-    # Calcular a Transformada de Fourier (DFT)
-    X = np.fft.fft(roi_data)
-    
-    # Plotar o espectro de frequências
-    frequencies = np.fft.fftfreq(N, time_stamps[1] - time_stamps[0])  # Frequências associadas
-    plt.figure(figsize=(10, 6))
-    plt.plot(frequencies[:N//2], np.abs(X)[:N//2])  # Apenas as frequências positivas
-    plt.title("Espectro de Frequências")
-    plt.xlabel("Frequência (Hz)")
-    plt.ylabel("Magnitude")
-    plt.grid(True)
-    plt.show()
-    
-    # Se uma frequência de corte for especificada, aplicar o filtro passa-baixa
-    if cutoff_frequency is not None:
-        # Atenuar frequências acima do corte
-        X[np.abs(frequencies) > cutoff_frequency] = 0
-
-    # Calcular a Transformada Inversa de Fourier (IDFT)
-    roi_filtered = np.fft.ifft(X)
-    
-    return np.real(roi_filtered)  # Retornar apenas a parte real
-
-def plot_signals(time_stamps, original_signal, filtered_signal, roi_label):
-    """
-    Plota o sinal original e o sinal filtrado no domínio do tempo.
-    
-    Args:
-        time_stamps: Lista de timestamps (tempo em segundos).
-        original_signal: Sinal original (domínio do tempo).
-        filtered_signal: Sinal filtrado (domínio do tempo).
-        roi_label: Rótulo para a ROI.
-    """
-    plt.figure(figsize=(10, 6))
-    plt.plot(time_stamps, original_signal, label="Sinal Original", color='blue', alpha=0.7)
-    plt.plot(time_stamps, filtered_signal, label="Sinal Filtrado", color='red', alpha=0.7)
-    plt.title(f"Filtragem por Transformada de Fourier para {roi_label}")
-    plt.xlabel("Tempo (s)")
-    plt.ylabel("Intensidade")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-def analyze_roi_with_fourier(RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4, time_stamps, cutoff_frequency=None):
-    """
-    Aplica a Transformada de Fourier e filtra as frequências de ruído em cada ROI.
-    
-    Args:
-        RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4: Dados das ROIs no domínio do tempo.
-        time_stamps: Lista de timestamps (tempo em segundos).
-        cutoff_frequency: Frequência de corte para o filtro passa-baixa.
-    """
-    # Aplicar a transformada de Fourier e filtro para cada ROI
-    RoiGreen1_filtered = apply_fourier_transform(time_stamps, RoiGreen1, cutoff_frequency)
-    #RoiGreen2_filtered = apply_fourier_transform(time_stamps, RoiGreen2, cutoff_frequency)
-    #RoiGreen3_filtered = apply_fourier_transform(time_stamps, RoiGreen3, cutoff_frequency)
-    #RoiGreen4_filtered = apply_fourier_transform(time_stamps, RoiGreen4, cutoff_frequency)
-    
-    # Plotar os resultados
-    plot_signals(time_stamps, RoiGreen1, RoiGreen1_filtered, "ROI 1")
-    #plot_signals(time_stamps, RoiGreen2, RoiGreen2_filtered, "ROI 2")
-    #plot_signals(time_stamps, RoiGreen3, RoiGreen3_filtered, "ROI 3")
-    #plot_signals(time_stamps, RoiGreen4, RoiGreen4_filtered, "ROI 4")
-
-
-
-# Chamar a função para analisar as ROIs com uma frequência de corte (ex: 1 Hz)
-#analyze_roi_with_fourier(SinalFinal, RoiGreen2, RoiGreen3, RoiGreen4, time_stamps, cutoff_frequency=12)
-
-
-
-
-
-
-
-
-
-######################################################
-#plot_image_and_ratios(frames,roi1, roi2, roi3, roi4, time_stamps,time_stamps_RoiGreen2,time_stamps_RoiGreen3,time_stamps_RoiGreen4, RoiGreen1_selected,RoiGreen2_aligned, RoiGreen3_aligned,RoiGreen4_aligned, folder_name)
-
-
-
-"""
-
-max_index = np.argmax(SinalFinal)
-shift_frame = 0
-max_index_shifted = min(max_index + shift_frame, len(SinalFinal))
-
-timeStampsShiftFrame=time_stamps[max_index_shifted:]
-ROICorrigidaShiftFrame = SinalFinal[max_index_shifted:]
-
-ratiosrC = ROICorrigidaShiftFrame
-ratiosgC = ROICorrigidaShiftFrame
-ratiosbC = ROICorrigidaShiftFrame
-
-ratiosC=np.column_stack((ratiosrC,ratiosgC,ratiosbC))
-pcrtComp = PCRT(timeStampsShiftFrame, ratiosC,exclusionMethod='best fit',exclusionCriteria=999)
-outputFilePCRTRGB = f"pCRTDeslocadoRGB{shift_frame}{video_name}.png"
-#pcrtComp.showAvgIntensPlot()
-pcrtComp.showPCRTPlot()
-outputFilePCRT = f"pCRTDeslocado{shift_frame}{video_name}.png"
-pcrtComp.savePCRTPlot(outputFilePCRT)
-"""
-
-
-
-
-
-
-
-
-
-#print(f"a= {a} b = {b} gamma = {gamma}")
-#plot_image_and_ratios(frames, a, b, gamma, roi1, roi2, roi3, roi4, time_stamps,RoiGreen1,RoiGreen2, RoiGreen3,RoiGreen4, ROI4Corrigida, folder_name)
-
-"""
-
-
-
-
-
-
-# Calculando média, desvio padrão e coeficiente de variação
-def calculate_stats(data):
-    mean = np.mean(data)
-    std_dev = np.std(data)
-    cv = (1000)*(std_dev / mean) if mean != 0 else 0  # Evita divisão por zero
-    return mean, std_dev, cv
-
-# Aplicando a função para cada curva
-stats_Corrigida = calculate_stats(ROI4Corrigida)
-stats_RoiGreen2 = calculate_stats(RoiGreen2)
-stats_RoiGreen3 = calculate_stats(RoiGreen3)
-stats_RoiGreen4 = calculate_stats(RoiGreen4)
-stats_RoiGreen5 = calculate_stats(RoiGreen5)
-
-# Criando um DataFrame com os resultados
-data = {
-    'RoiGreen2': stats_RoiGreen2,
-    'RoiGreen3': stats_RoiGreen3,
-    'RoiGreen4': stats_RoiGreen4,
-    'RoiGreen5': stats_RoiGreen5,
-    'ROICorrigida': stats_Corrigida,
-}
-
-
-
-df_stats = pd.DataFrame(data, index=['Média', 'Desvio Padrão', 'Coeficiente de Variação']).T
-
-# Salvando o DataFrame em um arquivo Excel
-excel_filename = "estatisticas_roisCaso7.xlsx"
-df_stats.to_excel(excel_filename, index=True)
-
-print(f"Os dados foram salvos no arquivo {excel_filename}")
-
-
-"""
-##### histograma
-
-
-def histogram(video_path, roi1, roi2, roi3, roi4, firstFrame,lastFrame, output_image_path):
-    # Tenta abrir o vídeo
-    cap = cv.VideoCapture(video_path)
-    if not cap.isOpened():
-        print("Erro ao abrir o vídeo.")
-        sys.exit(1)
-
-    # Lê os frames 10 e 400
-    cap.set(cv.CAP_PROP_POS_FRAMES, firstFrame)
-    ret, frame_10 = cap.read()
-    if not ret:
-        print(f"Não foi possível ler o frame {firstFrame}.")
-        sys.exit(1)
-
-    cap.set(cv.CAP_PROP_POS_FRAMES, lastFrame)
-    ret, frame_400 = cap.read()
-    if not ret:
-        print(f"Não foi possível ler o frame {lastFrame}.")
-        sys.exit(1)
-
-    # Extrai as ROIs para cada frame
-    roi_10_1 = frame_10[roi1[1]:roi1[1]+roi1[3], roi1[0]:roi1[0]+roi1[2]]
-    roi_10_2 = frame_10[roi2[1]:roi2[1]+roi2[3], roi2[0]:roi2[0]+roi2[2]]
-    roi_10_3 = frame_10[roi3[1]:roi3[1]+roi3[3], roi3[0]:roi3[0]+roi3[2]]
-    roi_10_4 = frame_10[roi4[1]:roi4[1]+roi4[3], roi4[0]:roi4[0]+roi4[2]]
-
-    roi_400_1 = frame_400[roi1[1]:roi1[1]+roi1[3], roi1[0]:roi1[0]+roi1[2]]
-    roi_400_2 = frame_400[roi2[1]:roi2[1]+roi2[3], roi2[0]:roi2[0]+roi2[2]]
-    roi_400_3 = frame_400[roi3[1]:roi3[1]+roi3[3], roi3[0]:roi3[0]+roi3[2]]
-    roi_400_4 = frame_400[roi4[1]:roi4[1]+roi4[3], roi4[0]:roi4[0]+roi4[2]]
-
-    # Converte as ROIs para escala de cinza
-    gray_roi_10_1 = cv.cvtColor(roi_10_1, cv.COLOR_BGR2GRAY)
-    gray_roi_10_2 = cv.cvtColor(roi_10_2, cv.COLOR_BGR2GRAY)
-    gray_roi_10_3 = cv.cvtColor(roi_10_3, cv.COLOR_BGR2GRAY)
-    gray_roi_10_4 = cv.cvtColor(roi_10_4, cv.COLOR_BGR2GRAY)
-
-    gray_roi_400_1 = cv.cvtColor(roi_400_1, cv.COLOR_BGR2GRAY)
-    gray_roi_400_2 = cv.cvtColor(roi_400_2, cv.COLOR_BGR2GRAY)
-    gray_roi_400_3 = cv.cvtColor(roi_400_3, cv.COLOR_BGR2GRAY)
-    gray_roi_400_4 = cv.cvtColor(roi_400_4, cv.COLOR_BGR2GRAY)
-
-    # Calcula os histogramas para as ROIs em escala de cinza
-    hist_10_1 = cv.calcHist([gray_roi_10_1], [0], None, [256], [0, 256])
-    hist_10_2 = cv.calcHist([gray_roi_10_2], [0], None, [256], [0, 256])
-    hist_10_3 = cv.calcHist([gray_roi_10_3], [0], None, [256], [0, 256])
-    hist_10_4 = cv.calcHist([gray_roi_10_4], [0], None, [256], [0, 256])
-
-    hist_400_1 = cv.calcHist([gray_roi_400_1], [0], None, [256], [0, 256])
-    hist_400_2 = cv.calcHist([gray_roi_400_2], [0], None, [256], [0, 256])
-    hist_400_3 = cv.calcHist([gray_roi_400_3], [0], None, [256], [0, 256])
-    hist_400_4 = cv.calcHist([gray_roi_400_4], [0], None, [256], [0, 256])
-
-    # Plota os histogramas com sobreposição
-    plt.figure(figsize=(12, 6))
-
-    plt.subplot(221)
-    plt.title('Histograma ROI 1')
-    plt.plot(hist_10_1, label=f'Frame{firstFrame}')
-    plt.plot(hist_400_1, label=f'Frame{lastFrame}')
-    plt.xlabel('Intensidade')
-    plt.ylabel('Frequência')
-    plt.legend()
-
-    plt.subplot(222)
-    plt.title('Histograma ROI 2')
-    plt.plot(hist_10_2, label=f'Frame{firstFrame}')
-    plt.plot(hist_400_2, label=f'Frame{lastFrame}')
-    plt.xlabel('Intensidade')
-    plt.ylabel('Frequência')
-    plt.legend()
-
-    plt.subplot(223)
-    plt.title('Histograma ROI 3')
-    plt.plot(hist_10_3, label=f'Frame{firstFrame}')
-    plt.plot(hist_400_3, label=f'Frame{lastFrame}')
-    plt.xlabel('Intensidade')
-    plt.ylabel('Frequência')
-    plt.legend()
-
-    plt.subplot(224)
-    plt.title('Histograma ROI 4')
-    plt.plot(hist_10_4, label=f'Frame{firstFrame}')
-    plt.plot(hist_400_4, label=f'Frame{lastFrame}')
-    plt.xlabel('Intensidade')
-    plt.ylabel('Frequência')
-    plt.legend()
-
-    plt.tight_layout()
-    
-    
-    plt.savefig(output_image_path, bbox_inches='tight', dpi=300)
-    
-    plt.show()
-    cap.release()
-
-
-
-
-
-def DerivadaMeiaAltura(sinal, time_stamps):
+def DerivadaMeiaAltura(IntesityChannel, time_stamps, roi1YUV):
     """
     Calcula a derivada do sinal, identifica os picos positivos e negativos, 
     e encontra o ponto de meia altura do pico positivo deslocado para frente.
@@ -771,7 +424,7 @@ def DerivadaMeiaAltura(sinal, time_stamps):
     """
     # Calcula a derivada
     dt = time_stamps[1] - time_stamps[0]
-    derivada = np.diff(sinal) / dt
+    derivada = np.diff(IntesityChannel) / dt
     
     # Ajusta os eixos de tempo
     t = time_stamps
@@ -800,13 +453,19 @@ def DerivadaMeiaAltura(sinal, time_stamps):
     # Plota o sinal e a derivada
     plt.figure(figsize=(10, 6))
     
-    plt.subplot(211)
-    plt.plot(t, sinal)
-    plt.title('Sinal Original')
-    plt.xlabel('Tempo')
-    plt.ylabel('Amplitude')
+    plt.subplot(311)
+    plt.plot(t, IntesityChannel)
+    plt.plot(t[maxPicoPositivo],IntesityChannel[maxPicoPositivo],'ro', label='Pico Derivada')
+    plt.plot(t[meio_altura_index],IntesityChannel[meio_altura_index],'bo', label='Pico derivada deslocado')
+    plt.xlabel('Time')
+    plt.ylabel('Average intensity')
     
-    plt.subplot(212)
+    plt.subplot(312)
+    plt.plot(time_stamps,roi1YUV, label='Channel Y do YUV')
+    plt.xlabel('Time')
+    plt.ylabel('Average intensity')
+    
+    plt.subplot(313)
     plt.plot(t_derivada, derivada, label='Derivada')
     plt.title('Derivada do Sinal')
     plt.xlabel('Tempo')
@@ -826,21 +485,10 @@ def DerivadaMeiaAltura(sinal, time_stamps):
 # os picos positivos e negativos da derivada do sinal de CRT
 # o pico positivo é o momento que se tem a retirado do dedo
 # o pico negativo é o momento que se aplica a compressão
-maxPicoPositivo, meio_altura_index = DerivadaMeiaAltura(RoiGreen1,time_stamps)
+maxPicoPositivo, meio_altura_index = DerivadaMeiaAltura(RoiGreen1,time_stamps,roi1YUV)
 
 
 print(maxPicoPositivo)
 print(meio_altura_index)
 
 
-"""
-
-
-firstFrame = 10
-lastFrame = meio_altura_index # ponto de retirada do dedo 
-
-###################### Histograna da imagem ####################
-# função para calcular o histograma de uma imagem
-output_image_path = f"FigureHistogram{firstFrame}{lastFrame}.png"
-histogram(video_path, roi1, roi2, roi3, roi4, firstFrame, lastFrame, output_image_path)
-"""
