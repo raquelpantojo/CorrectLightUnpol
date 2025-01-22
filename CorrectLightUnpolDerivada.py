@@ -25,25 +25,23 @@ from src.pyCRT import PCRT
 #base_path="C:/Users/Fotobio/Documents/GitHub/CorrectLightUnpol/DespolarizadoP5"#PC casa 
 #base_path="C:/Users/Fotobio/Documents/GitHub"
 base_path="C:/Users/raque/OneDrive/Documentos/GitHub" # note
+folder_name = "CorrectLightUnpol"
 
-#folder_name = "teste1"
-#folder_name="CorrectLightUnpol"
+
 #video_name="v5.mp4"
-#video_name = "SeiyLedDesp4.mp4"
-#
-video_name = "NatanLedDesp6.mp4"
-#video_name ="SeiyLedPol6.mp4"
-#video_name="NatanledPol5.mp4"
+#video_name="v7.mp4"
 #video_name = "corrected_v7_gamma=1.mp4"
 
+#video_name = "SeiyLedDesp4.mp4"
+#video_name ="SeiyLedPol6.mp4"
+
+#video_name = "NatanLedDesp6.mp4"
+#video_name="NatanledPol5.mp4"
 
 
-folder_name = "CorrectLightUnpol"
-#video_name="corrected_v7_gamma=1.mp4"
-#video_name="raqueltestecasa.mp4"
-#video_name="v7.mp4"
-#video_name ="SeiyLedDesp4.mp4"
+video_name = "EduLedDesp4.mp4"
 
+roi1=(710, 121, 131, 150)
 
 roi_width = 80 
 roi_height = 80
@@ -331,22 +329,11 @@ frame_count = 0
 fps = cap.get(cv.CAP_PROP_FPS)
 
 
-#roi1=(1121, 222, 154, 154) #v7 original
-#roi2=(1810, 9, 41, 93)
-#roi3=(43, 22, 94, 82)
-#roi4=(1794, 744, 76, 84)
-#roi5=(453, 199, 84, 82)
-
-roi1= (457, 571, 165, 215)
-roi2= (209, 81, 102, 97)
-roi3=(694, 139, 83, 73)
-roi4=(1409, 22, 121, 70)
-
 
 cap.set(cv.CAP_PROP_POS_FRAMES, 0)
 
 # Listas para armazenar intensidades e timestamps
-RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4,RoiGreen5, RoiGray,time_stamps = [], [], [], [], [], [], []
+RoiGreen1, RoiGreen2, RoiGreen3, RoiGreen4,RoiGreen5, RoiGray1,RoiRed1,RoiBlue1,time_stamps = [], [], [], [], [], [], [],[], []
 frames = []
 # Processa o vídeo frame a frame
 while True:
@@ -361,28 +348,33 @@ while True:
     
     # Extrai as ROIs e calcula a média do canal verde
     roi1_frame = frame[int(roi1[1]):int(roi1[1] + roi1[3]), int(roi1[0]):int(roi1[0] + roi1[2])] # ROI CRT
-    roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
-    roi3_frame = frame[int(roi3[1]):int(roi3[1] + roi3[3]), int(roi3[0]):int(roi3[0] + roi3[2])]
-    roi4_frame = frame[int(roi4[1]):int(roi4[1] + roi4[3]), int(roi4[0]):int(roi4[0] + roi4[2])]  
+    #roi2_frame = frame[int(roi2[1]):int(roi2[1] + roi2[3]), int(roi2[0]):int(roi2[0] + roi2[2])]
+    #roi3_frame = frame[int(roi3[1]):int(roi3[1] + roi3[3]), int(roi3[0]):int(roi3[0] + roi3[2])]
+    #roi4_frame = frame[int(roi4[1]):int(roi4[1] + roi4[3]), int(roi4[0]):int(roi4[0] + roi4[2])]  
 
+    RoiRed1.append(np.mean(roi1_frame[:,:,0]))
+    RoiGreen1.append(np.mean(roi1_frame[:,:,1]))
+    RoiBlue1.append(np.mean(roi1_frame[:,:,2]))
+    
     # ROI Gray
     roiGray1 = cv.cvtColor(roi1_frame, cv.COLOR_BGR2GRAY)
-    RoiGreen1.append(np.mean(roiGray1))
+    RoiGray1.append(np.mean(roiGray1))
     
-    roiGray2 = cv.cvtColor(roi2_frame, cv.COLOR_BGR2GRAY)
-    RoiGreen2.append(np.mean(roiGray2))
+    #roiGray2 = cv.cvtColor(roi2_frame, cv.COLOR_BGR2GRAY)
+    #RoiGreen2.append(np.mean(roiGray2))
     
     # ROI fora 
-    roiGray3 = cv.cvtColor(roi3_frame, cv.COLOR_BGR2GRAY)
-    RoiGreen3.append(np.mean(roiGray3))
+    #roiGray3 = cv.cvtColor(roi3_frame, cv.COLOR_BGR2GRAY)
+    #RoiGreen3.append(np.mean(roiGray3))
 
     # ROI fora 
-    roiGray4 = cv.cvtColor(roi4_frame, cv.COLOR_BGR2GRAY)
-    RoiGreen4.append(np.mean(roiGray4))
+    #roiGray4 = cv.cvtColor(roi4_frame, cv.COLOR_BGR2GRAY)
+    #RoiGreen4.append(np.mean(roiGray4))
     
+
     #YUV
-    roi1YUV = cv.cvtColor(roi1_frame, cv.COLOR_BGR2YUV)
-    roi1YUV.append(np.mean(roi1YUV[:,:,1]))
+    #roi1YUV = cv.cvtColor(roi1_frame, cv.COLOR_BGR2YUV)
+    #roi1YUV.append(np.mean(roi1YUV[:,:,1]))
     
     
 
@@ -395,11 +387,20 @@ cap.release()
 
 
 RoiGreen1=np.array(RoiGreen1)
-RoiGreen2=np.array(RoiGreen2)
-RoiGreen3=np.array(RoiGreen3)
-RoiGreen4=np.array(RoiGreen4)
+#RoiGreen2=np.array(RoiGreen2)
+#RoiGreen3=np.array(RoiGreen3)
+#RoiGreen4=np.array(RoiGreen4)
+roiGray1=np.array(RoiGray1)
 
-roi1YUV = np.array(roi1YUV)
+#roi1YUV = np.array(roi1YUV)
+
+# g=G/(R+B+G)
+RoiRed1 = np.array(RoiRed1)
+RoiBlue1 = np.array(RoiBlue1)
+
+SomeRGB = RoiRed1+RoiGreen1+RoiBlue1
+IntensityGNormalized= RoiGreen1/roiGray1
+IntensityGNormalized=np.array(IntensityGNormalized)
 
 time_stamps = np.array(time_stamps)
 
@@ -409,11 +410,7 @@ time_stamps = np.array(time_stamps)
 
 
 
-
-
-
-
-def DerivadaMeiaAltura(IntesityChannel, time_stamps, roi1YUV):
+def DerivadaMeiaAltura(IntesityChannel, time_stamps, roi1YUV,NameFigDerivada):
     """
     Calcula a derivada do sinal, identifica os picos positivos e negativos, 
     e encontra o ponto de meia altura do pico positivo deslocado para frente.
@@ -454,16 +451,18 @@ def DerivadaMeiaAltura(IntesityChannel, time_stamps, roi1YUV):
     plt.figure(figsize=(10, 6))
     
     plt.subplot(311)
-    plt.plot(t, IntesityChannel)
+    plt.plot(t, IntesityChannel,label='Canal Verde ROI 1')
     plt.plot(t[maxPicoPositivo],IntesityChannel[maxPicoPositivo],'ro', label='Pico Derivada')
     plt.plot(t[meio_altura_index],IntesityChannel[meio_altura_index],'bo', label='Pico derivada deslocado')
     plt.xlabel('Time')
     plt.ylabel('Average intensity')
+    plt.legend()
     
     plt.subplot(312)
-    plt.plot(time_stamps,roi1YUV, label='Channel Y do YUV')
+    plt.plot(time_stamps,roi1YUV, label='Corrigido')
     plt.xlabel('Time')
     plt.ylabel('Average intensity')
+    plt.legend()
     
     plt.subplot(313)
     plt.plot(t_derivada, derivada, label='Derivada')
@@ -472,9 +471,10 @@ def DerivadaMeiaAltura(IntesityChannel, time_stamps, roi1YUV):
     plt.ylabel('Derivada da Amplitude')
     plt.plot(t_derivada[maxPicoPositivo], derivada[maxPicoPositivo], 'ro', label='Máximo Pico Positivo')
     plt.plot(t_derivada[meio_altura_index], derivada[meio_altura_index], 'bo', label='Meia Altura (Deslocado)')
-    
     plt.legend()
+    
     plt.tight_layout()
+    plt.savefig(NameFigDerivada, dpi=300) 
     plt.show()
     
     return maxPicoPositivo, meio_altura_index
@@ -485,10 +485,47 @@ def DerivadaMeiaAltura(IntesityChannel, time_stamps, roi1YUV):
 # os picos positivos e negativos da derivada do sinal de CRT
 # o pico positivo é o momento que se tem a retirado do dedo
 # o pico negativo é o momento que se aplica a compressão
-maxPicoPositivo, meio_altura_index = DerivadaMeiaAltura(RoiGreen1,time_stamps,roi1YUV)
+NameFigDerivada =f"DerivadaverdeGray{video_name}.png"
+maxPicoPositivo, meio_altura_index = DerivadaMeiaAltura(RoiGreen1,time_stamps,IntensityGNormalized,NameFigDerivada)
+tempoMaxPicoPositivo = time_stamps[meio_altura_index]
 
 
-print(maxPicoPositivo)
-print(meio_altura_index)
+plt.figure(figsize=(10, 6))   
+plt.subplot(311)
+plt.plot(time_stamps, RoiGreen1, label='Canal Verde ROI 1', color='darkgreen')
+plt.xlabel('Time')
+plt.ylabel('Average intensity')
+plt.legend()
 
+plt.subplot(312)
+plt.plot(time_stamps,RoiGray1, label='Canal Cinza ROI 1', color='gray')
+plt.xlabel('Time')
+plt.ylabel('Average intensity')
+plt.legend()
+
+plt.subplot(313)
+plt.plot(time_stamps, IntensityGNormalized, label='Green/Gray', color='orange')
+plt.xlabel('Time')
+plt.ylabel('Average intensity')
+plt.legend()
+
+
+plt.tight_layout()
+NameFigDerivada =f"verdeGray{video_name}.png"
+plt.savefig(NameFigDerivada, dpi=300)
+plt.show()
+
+
+
+#print(maxPicoPositivo)
+#print(meio_altura_index)
+
+
+ratiosC=np.column_stack((RoiGreen1,RoiGreen1,RoiGreen1))
+pcrtComp = PCRT(time_stamps, ratiosC,exclusionMethod='best fit',exclusionCriteria=9999,fromTime=tempoMaxPicoPositivo)
+
+pcrtComp.showPCRTPlot()
+outputFilePCRT = f"verdeGrayPCRT{video_name}.png"
+pcrtComp.savePCRTPlot(outputFilePCRT)
+print(pcrtComp)
 
