@@ -1,7 +1,11 @@
 # teste corrigindo balança de branco 
 import cv2
 import numpy as np
+
+
+
 import moviepy.editor as mp
+from moviepy.editor import VideoFileClip
 
 # Função para corrigir o balanço de branco
 def corrigir_balanco_branco(frame):

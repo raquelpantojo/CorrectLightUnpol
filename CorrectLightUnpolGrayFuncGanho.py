@@ -32,7 +32,8 @@ base_path="C:/Users/raque/OneDrive/Documentos/GitHub" # note
 folder_name="CorrectLightUnpol"
 #video_name = "NatanLedDesp6.mp4"
 #video_name = "EduLedDesp4.mp4"
-video_name = "SeiyLedDesp4.mp4"
+#video_name = "SeiyLedDesp4.mp4"
+video_name="EduLedDesp4.mp4"
 #video_name = "SeiyLedPol6.mp4"
 #video_name= "Desp1.mp4"
 #video_name="v7.mp4"
@@ -48,7 +49,7 @@ num_rois = 200  # Número de ROIs a serem criadas
 #roi1=(339, 855, 176, 137)
 
 #Seyi Despolarizado
-roi1=(523, 246, 180, 147)
+#roi1=(523, 246, 180, 147)
 
 #Seyi Polarizado
 #roi1=(594, 183, 124, 131)
@@ -57,7 +58,7 @@ roi1=(523, 246, 180, 147)
 #roi1= (457, 571, 165, 215)
 
 #Edu Desp
-#roi1=(710, 121, 131, 150)
+roi1=(710, 121, 131, 150)
 
 
 # Função de plotagem com a razão ajustada
